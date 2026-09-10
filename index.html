@@ -94,20 +94,11 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .nav-item{flex:1;background:none;border:none;color:#8b949e;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
 .nav-item.active{color:#ffcc00}
 .nav-item .icon{font-size:20px}
-
-/* РУЛЕТКА */
 .roulette-wrap{padding:20px 16px;text-align:center}
 .roulette-title{font-size:24px;font-weight:900;margin-bottom:8px}
 .roulette-subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
 .wheel-container{position:relative;width:280px;height:280px;margin:0 auto 24px;filter:drop-shadow(0 0 30px rgba(255,204,0,.4))}
-.wheel{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 5s cubic-bezier(.17,.67,.15,1);background:conic-gradient(
-  #ffcc00 0deg 60deg,
-  #238636 60deg 120deg,
-  #f85149 120deg 180deg,
-  #58a6ff 180deg 240deg,
-  #a371f7 240deg 300deg,
-  #ff9500 300deg 360deg
-);border:6px solid #161b22}
+.wheel{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 5s cubic-bezier(.17,.67,.15,1);background:conic-gradient(#ffcc00 0deg 60deg,#238636 60deg 120deg,#f85149 120deg 180deg,#58a6ff 180deg 240deg,#a371f7 240deg 300deg,#ff9500 300deg 360deg);border:6px solid #161b22}
 .wheel::after{content:'';position:absolute;top:50%;left:50%;width:80px;height:80px;background:#161b22;border-radius:50%;transform:translate(-50%,-50%);border:4px solid #ffcc00}
 .wheel-arrow{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:30px solid #ffcc00;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
 .wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32px;z-index:5;pointer-events:none}
@@ -165,16 +156,13 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
     <div class="roulette-wrap">
       <div class="roulette-title">🎰 Колесо Фортуны</div>
       <div class="roulette-subtitle">Крути раз в неделю • Приз от 500 до 15 000 ₽</div>
-
       <div class="wheel-container">
         <div class="wheel-arrow"></div>
         <div class="wheel" id="wheel"></div>
         <div class="wheel-center">🎁</div>
       </div>
-
       <button class="spin-btn" id="spinBtn" onclick="spinWheel()">КРУТИТЬ 🎰</button>
       <div class="cooldown" id="cooldown"></div>
-
       <div class="prizes-grid">
         <div class="prize-cell"><div class="sum">500 ₽</div><div class="label">Фрибет</div></div>
         <div class="prize-cell"><div class="sum">1 000 ₽</div><div class="label">Фрибет</div></div>
@@ -199,12 +187,10 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
         <div class="row"><span>Лимит пополнения на сегодня</span><span id="pLimit">—</span></div>
         <button class="deposit-btn-big" onclick="showDeposit()">💳 Пополнить баланс</button>
       </div>
-
       <div class="card">
         <h3>📜 История ставок</h3>
         <div id="history"></div>
       </div>
-
       <button class="btn-primary" style="background:#da3633;color:#fff" onclick="logout()">Выйти из аккаунта</button>
     </div>
   </div>
@@ -235,15 +221,9 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 </div>
 
 <div class="bottom-nav" id="bottomNav" style="display:none">
-  <button class="nav-item active" onclick="showPage('bets')" id="navBets">
-    <span class="icon">⚽</span>Линия
-  </button>
-  <button class="nav-item" onclick="showPage('roulette')" id="navRoulette">
-    <span class="icon">🎰</span>Рулетка
-  </button>
-  <button class="nav-item" onclick="showPage('profile')" id="navProfile">
-    <span class="icon">👤</span>Профиль
-  </button>
+  <button class="nav-item active" onclick="showPage('bets')" id="navBets"><span class="icon">⚽</span>Линия</button>
+  <button class="nav-item" onclick="showPage('roulette')" id="navRoulette"><span class="icon">🎰</span>Рулетка</button>
+  <button class="nav-item" onclick="showPage('profile')" id="navProfile"><span class="icon">👤</span>Профиль</button>
 </div>
 
 <div class="result-modal" id="resultModal">
@@ -271,7 +251,6 @@ let useFreebet = false;
 
 const DAILY_LIMIT = 1500000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 const PRIZES = [500, 1000, 2500, 5000, 10000, 15000];
 
 try {
@@ -363,7 +342,6 @@ function hideMsg(){
 function submitAuth(){
   const login = document.getElementById('loginInput').value.trim();
   const pass = document.getElementById('passInput').value;
-
   if(!login || login.length < 3) return showMsg('Логин минимум 3 символа', false);
   if(!pass || pass.length < 3) return showMsg('Пароль минимум 3 символа', false);
 
@@ -371,17 +349,7 @@ function submitAuth(){
     const pass2 = document.getElementById('pass2Input').value;
     if(pass !== pass2) return showMsg('Пароли не совпадают', false);
     if(DB[login]) return showMsg('Логин уже занят', false);
-
-    DB[login] = {
-      pass: pass,
-      balance: 10000,
-      freebet: 0,
-      history: [],
-      depositToday: 0,
-      depositDate: getTodayKey(),
-      lastSpin: 0,
-      createdAt: Date.now()
-    };
+    DB[login] = { pass: pass, balance: 10000, freebet: 0, history: [], depositToday: 0, depositDate: getTodayKey(), lastSpin: 0, createdAt: Date.now() };
     saveDB();
     showMsg('✅ Успешно! Теперь войди', true);
     setTimeout(() => switchAuth('login'), 1200);
@@ -443,33 +411,18 @@ function updateFreebetUI(){
 function showDeposit(){
   const today = getTodayDeposit();
   const left = DAILY_LIMIT - today;
-
-  if(left <= 0){
-    return showToast('❌ Лимит на сегодня исчерпан (1 500 000 ₽)', false);
-  }
-
-  const amount = prompt(
-    'Сумма пополнения\n\n' +
-    'Сегодня пополнено: ' + today.toLocaleString('ru-RU') + ' ₽\n' +
-    'Осталось на сегодня: ' + left.toLocaleString('ru-RU') + ' ₽\n\n' +
-    'Введите сумму:',
-    String(Math.min(1000, left))
-  );
+  if(left <= 0) return showToast('❌ Лимит на сегодня исчерпан (1 500 000 ₽)', false);
+  const amount = prompt('Сумма пополнения\n\nСегодня пополнено: ' + today.toLocaleString('ru-RU') + ' ₽\nОсталось на сегодня: ' + left.toLocaleString('ru-RU') + ' ₽\n\nВведите сумму:', String(Math.min(1000, left)));
   if(!amount) return;
   const num = Number(amount);
-
   if(isNaN(num) || num <= 0) return showToast('Неверная сумма', false);
-  if(num > left){
-    return showToast('❌ Превышение! Максимум сегодня: ' + left.toLocaleString('ru-RU') + ' ₽', false);
-  }
-
+  if(num > left) return showToast('❌ Превышение! Максимум сегодня: ' + left.toLocaleString('ru-RU') + ' ₽', false);
   balance += num;
   DB[currentUser].balance = balance;
   DB[currentUser].depositToday = today + num;
   DB[currentUser].depositDate = getTodayKey();
   saveDB();
   updateBalanceUI();
-
   const leftAfter = DAILY_LIMIT - DB[currentUser].depositToday;
   showToast('✅ +' + num.toLocaleString('ru-RU') + ' ₽ | Остаток: ' + leftAfter.toLocaleString('ru-RU') + ' ₽');
 }
@@ -494,7 +447,6 @@ function renderProfile(){
   document.getElementById('pWins').textContent = wins;
   const inPlay = betHistory.filter(b => b.status === 'pending').reduce((a,b) => a + b.stake, 0);
   document.getElementById('pInPlay').textContent = inPlay.toLocaleString('ru-RU') + ' ₽';
-
   const today = getTodayDeposit();
   const left = DAILY_LIMIT - today;
   const limitEl = document.getElementById('pLimit');
@@ -507,25 +459,17 @@ function renderProfile(){
     return;
   }
   hist.innerHTML = betHistory.slice().reverse().map(b => {
-    const statusText = b.status === 'pending' ? '⏳ В игре'
-                     : b.status === 'win' ? '✅ Выигрыш'
-                     : '❌ Проигрыш';
-    return '<div class="history-item">' +
-      '<div>' + b.items.map(i => i.home + '—' + i.away).join(', ') + '</div>' +
-      '<div style="color:#8b949e;font-size:11px;margin-top:4px">' +
-      'Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) +
-      '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
+    const statusText = b.status === 'pending' ? '⏳ В игре' : b.status === 'win' ? '✅ Выигрыш' : '❌ Проигрыш';
+    return '<div class="history-item"><div>' + b.items.map(i => i.home + '—' + i.away).join(', ') + '</div><div style="color:#8b949e;font-size:11px;margin-top:4px">Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) + '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
   }).join('');
 }
 
-/* ============ РУЛЕТКА ============ */
 function renderRoulette(){
   const lastSpin = DB[currentUser].lastSpin || 0;
   const nextSpin = lastSpin + WEEK_MS;
   const now = Date.now();
   const btn = document.getElementById('spinBtn');
   const cd = document.getElementById('cooldown');
-
   if(now >= nextSpin){
     btn.disabled = false;
     btn.textContent = 'КРУТИТЬ 🎰';
@@ -546,34 +490,26 @@ function renderRoulette(){
 function spinWheel(){
   const lastSpin = DB[currentUser].lastSpin || 0;
   const nextSpin = lastSpin + WEEK_MS;
-  if(Date.now() < nextSpin){
-    return showToast('⏳ Ещё рано, братан!', false);
-  }
+  if(Date.now() < nextSpin) return showToast('⏳ Ещё рано, братан!', false);
 
   const btn = document.getElementById('spinBtn');
   btn.disabled = true;
   btn.textContent = 'Крутится...';
 
-  // Выбираем случайный приз
   const prizeIndex = Math.floor(Math.random() * PRIZES.length);
   const prize = PRIZES[prizeIndex];
-
-  // Угол: 6 секторов по 60°. Крутим 5 оборотов + попадаем в нужный сектор
   const sectorAngle = 60;
   const targetAngle = 360 * 5 + (360 - prizeIndex * sectorAngle - sectorAngle / 2);
-
   const wheel = document.getElementById('wheel');
   wheel.style.transform = 'rotate(' + targetAngle + 'deg)';
 
   setTimeout(() => {
-    // Начисляем фрибет
     freebet += prize;
     DB[currentUser].freebet = freebet;
     DB[currentUser].lastSpin = Date.now();
     saveDB();
     updateFreebetUI();
 
-    // Показываем модалку
     document.getElementById('resultAmount').textContent = '+' + prize.toLocaleString('ru-RU') + ' ₽';
     if(prize === 15000){
       document.getElementById('resultEmoji').textContent = '👑';
@@ -589,30 +525,23 @@ function spinWheel(){
       document.getElementById('resultText').textContent = 'Фрибет зачислен на ваш счёт';
     }
     document.getElementById('resultModal').classList.add('show');
-
-    btn.disabled = true;
-    btn.textContent = '⏳ Недоступно';
     renderRoulette();
   }, 5200);
 }
 
 function closeResult(){
   document.getElementById('resultModal').classList.remove('show');
-  // Сброс колеса
   setTimeout(() => {
-    document.getElementById('wheel').style.transition = 'none';
-    document.getElementById('wheel').style.transform = 'rotate(0deg)';
-    setTimeout(() => {
-      document.getElementById('wheel').style.transition = 'transform 5s cubic-bezier(.17,.67,.15,1)';
-    }, 50);
+    const w = document.getElementById('wheel');
+    w.style.transition = 'none';
+    w.style.transform = 'rotate(0deg)';
+    setTimeout(() => { w.style.transition = 'transform 5s cubic-bezier(.17,.67,.15,1)'; }, 50);
   }, 300);
 }
 
-/* ============ СТАВКИ ============ */
 function renderTabs(){
   document.getElementById('tabs').innerHTML = SPORTS.map(s =>
-    '<button class="tab ' + (s===selectedSport?'active':'') +
-    '" onclick="selectSport(\'' + s + '\')">' + s + '</button>'
+    '<button class="tab ' + (s===selectedSport?'active':'') + '" onclick="selectSport(\'' + s + '\')">' + s + '</button>'
   ).join('');
 }
 
@@ -626,21 +555,7 @@ function renderMatches(){
   const list = MATCHES[selectedSport] || [];
   document.getElementById('matches').innerHTML = list.map(m => {
     const labels = selectedSport === '🎾 Теннис' ? ['П1','','П2'] : ['1','X','2'];
-    return '<div class="match">' +
-      '<div class="match-header">' +
-      '<span class="league">' + m.league + '</span>' +
-      '<span class="time">' + (m.live ? '<span class="live-dot"></span>' : '') + m.time + '</span>' +
-      '</div>' +
-      '<div class="teams">' + m.home + ' — ' + m.away +
-      (m.score ? '<span class="score">' + m.score + '</span>' : '') + '</div>' +
-      '<div class="odds-row">' +
-      m.odds.map((o,i) => o===0 ? '' :
-        '<div class="odd ' + (isSelected(m.id,i)?'selected':'') +
-        '" onclick="addBet(' + m.id + ',' + i + ',' + o + ')">' +
-        '<div class="odd-label">' + labels[i] + '</div>' +
-        '<div class="odd-value">' + o.toFixed(2) + '</div></div>'
-      ).join('') +
-      '</div></div>';
+    return '<div class="match"><div class="match-header"><span class="league">' + m.league + '</span><span class="time">' + (m.live ? '<span class="live-dot"></span>' : '') + m.time + '</span></div><div class="teams">' + m.home + ' — ' + m.away + (m.score ? '<span class="score">' + m.score + '</span>' : '') + '</div><div class="odds-row">' + m.odds.map((o,i) => o===0 ? '' : '<div class="odd ' + (isSelected(m.id,i)?'selected':'') + '" onclick="addBet(' + m.id + ',' + i + ',' + o + ')"><div class="odd-label">' + labels[i] + '</div><div class="odd-value">' + o.toFixed(2) + '</div></div>').join('') + '</div></div>';
   }).join('');
 }
 
@@ -654,14 +569,9 @@ function addBet(matchId, outcome, odds){
   if(!m) return;
   const labels = ['1','X','2'];
   const idx = bets.findIndex(b => b.matchId === matchId);
-
-  if(idx !== -1 && bets[idx].outcome === outcome){
-    bets.splice(idx, 1);
-  } else if(idx !== -1){
-    bets[idx] = { matchId, outcome, odds, label: labels[outcome], home: m.home, away: m.away };
-  } else {
-    bets.push({ matchId, outcome, odds, label: labels[outcome], home: m.home, away: m.away });
-  }
+  if(idx !== -1 && bets[idx].outcome === outcome) bets.splice(idx, 1);
+  else if(idx !== -1) bets[idx] = { matchId, outcome, odds, label: labels[outcome], home: m.home, away: m.away };
+  else bets.push({ matchId, outcome, odds, label: labels[outcome], home: m.home, away: m.away });
   renderMatches();
   renderSlip();
 }
@@ -676,23 +586,15 @@ function renderSlip(){
   const badge = document.getElementById('badge');
   document.getElementById('badgeCount').textContent = bets.length;
   badge.classList.toggle('show', bets.length > 0);
-
   document.getElementById('slipItems').innerHTML = bets.length
-    ? bets.map((b,i) =>
-        '<div class="slip-item">' +
-        '<button class="remove" onclick="removeBet(' + i + ')">✕</button>' +
-        '<div>' + b.home + ' — ' + b.away + '</div>' +
-        '<div class="m">' + b.label + ' <span class="o">@ ' + b.odds.toFixed(2) + '</span></div></div>'
-      ).join('')
+    ? bets.map((b,i) => '<div class="slip-item"><button class="remove" onclick="removeBet(' + i + ')">✕</button><div>' + b.home + ' — ' + b.away + '</div><div class="m">' + b.label + ' <span class="o">@ ' + b.odds.toFixed(2) + '</span></div></div>').join('')
     : '<div style="color:#8b949e;text-align:center;padding:20px">Купон пуст</div>';
   updateFreebetUI();
   updatePayout();
 }
 
 function toggleFreebet(){
-  if(freebet <= 0){
-    return showToast('У вас нет фрибетов', false);
-  }
+  if(freebet <= 0) return showToast('У вас нет фрибетов', false);
   useFreebet = !useFreebet;
   const btn = document.getElementById('useFreebetBtn');
   if(useFreebet){
@@ -710,12 +612,10 @@ function toggleFreebet(){
 function updatePayout(){
   const stake = Number(document.getElementById('stakeInput').value) || 0;
   const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
-  const realStake = useFreebet ? Math.min(stake, freebet) : 0;
-  const realMoney = stake - realStake;
   const win = stake * (bets.length ? totalOdds : 0);
   let text = win.toFixed(0) + ' ₽';
-  if(useFreebet && realStake > 0){
-    text += ' (' + realStake + '₽ фрибет)';
+  if(useFreebet && freebet > 0){
+    text += ' (' + Math.min(stake, freebet) + '₽ фрибет)';
   }
   document.getElementById('payout').textContent = text;
 }
@@ -738,12 +638,10 @@ function placeBet(){
 
   let realMoneyStake = stake;
   let freebetUsed = 0;
-
   if(useFreebet && freebet > 0){
     freebetUsed = Math.min(stake, freebet);
     realMoneyStake = stake - freebetUsed;
   }
-
   if(realMoneyStake > balance) return showToast('Недостаточно средств', false);
 
   const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
@@ -752,16 +650,7 @@ function placeBet(){
   balance -= realMoneyStake;
   freebet -= freebetUsed;
 
-  const record = {
-    id: Date.now(),
-    items: [...bets],
-    stake: stake,
-    freebetUsed: freebetUsed,
-    totalOdds: totalOdds,
-    potentialWin: potentialWin,
-    status: 'pending',
-    createdAt: Date.now()
-  };
+  const record = { id: Date.now(), items: [...bets], stake: stake, freebetUsed: freebetUsed, totalOdds: totalOdds, potentialWin: potentialWin, status: 'pending', createdAt: Date.now() };
   betHistory.push(record);
   DB[currentUser].balance = balance;
   DB[currentUser].freebet = freebet;
@@ -770,7 +659,6 @@ function placeBet(){
   updateBalanceUI();
   updateFreebetUI();
 
-  // Сбрасываем фрибет-режим
   useFreebet = false;
   const fbBtn = document.getElementById('useFreebetBtn');
   fbBtn.textContent = '🎁 Использовать фрибет';
@@ -804,7 +692,6 @@ function placeBet(){
   toggleSlip();
 }
 
-// Обновление коэффициентов
 setInterval(() => {
   if(!currentUser) return;
   Object.keys(MATCHES).forEach(sport => {
@@ -829,29 +716,19 @@ setInterval(() => {
   renderSlip();
 }, 5000);
 
-// LIVE-симуляция
 setInterval(() => {
   if(!currentUser) return;
   let changed = false;
-
   Object.keys(MATCHES).forEach(sport => {
     MATCHES[sport].forEach(m => {
       if(!m.live) return;
-
       if(sport === '⚽ Футбол'){
         const min = parseInt(m.time) || 0;
-        if(min < 90){
-          m.time = (min + 1) + "'";
-          changed = true;
-        }
+        if(min < 90){ m.time = (min + 1) + "'"; changed = true; }
       } else if(sport === '🏒 Хоккей'){
         const min = parseInt(m.time) || 0;
-        if(min < 60){
-          m.time = (min + 1) + "'";
-          changed = true;
-        }
+        if(min < 60){ m.time = (min + 1) + "'"; changed = true; }
       }
-
       if(Math.random() < 0.05 && m.score){
         const parts = m.score.split(':').map(Number);
         if(Math.random() < 0.5) parts[0]++;
@@ -862,15 +739,11 @@ setInterval(() => {
       }
     });
   });
-
   if(changed) renderMatches();
 }, 8000);
 
-// Обновление кулдауна рулетки каждую минуту
 setInterval(() => {
-  if(currentUser && document.getElementById('pageRoulette').style.display !== 'none'){
-    renderRoulette();
-  }
+  if(currentUser && document.getElementById('pageRoulette').style.display !== 'none') renderRoulette();
 }, 60000);
 
 let toastTimer;
@@ -891,9 +764,7 @@ if(currentUser && DB[currentUser]){
 }
 
 document.addEventListener('keydown', e => {
-  if(e.key === 'Enter' && document.getElementById('authScreen').style.display !== 'none'){
-    submitAuth();
-  }
+  if(e.key === 'Enter' && document.getElementById('authScreen').style.display !== 'none') submitAuth();
 });
 </script>
 </body>
