@@ -1,3 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="BETAPP">
+<title>BETAPP</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
+#authScreen{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;padding:24px}
+.logo{font-size:44px;font-weight:900;margin-bottom:6px;letter-spacing:-1px}
+.logo span{color:#ffcc00}
+.subtitle{color:#8b949e;margin-bottom:32px;font-size:14px}
+.auth-box{width:100%;max-width:380px;background:#161b22;padding:24px;border-radius:16px;border:1px solid #30363d}
+.auth-tabs{display:flex;gap:8px;margin-bottom:20px}
+.auth-tab{flex:1;padding:10px;background:#21262d;border:none;border-radius:10px;color:#8b949e;font-weight:600;font-size:14px;cursor:pointer}
+.auth-tab.active{background:#ffcc00;color:#000}
+.auth-box input{width:100%;padding:14px;margin-bottom:12px;background:#0d1117;border:1px solid #30363d;border-radius:10px;color:#fff;font-size:16px;outline:none}
+.auth-box input:focus{border-color:#ffcc00}
+.btn-primary{width:100%;padding:14px;background:#ffcc00;color:#000;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+.msg{padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;text-align:center;display:none}
+.msg.show{display:block}
+.msg.err{background:#da3633}
+.msg.ok{background:#238636}
+#appScreen{display:none;padding-bottom:100px}
+.header{position:sticky;top:0;z-index:10;background:#161b22;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d}
+.header .logo{font-size:22px;margin:0}
+.right-head{display:flex;gap:8px;align-items:center}
+.balance{background:linear-gradient(135deg,#238636,#2ea043);padding:8px 14px;border-radius:20px;font-weight:700;font-size:14px;cursor:pointer}
+.freebet-badge{background:linear-gradient(135deg,#ffcc00,#ff9500);color:#000;padding:8px 12px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;display:none}
+.freebet-badge.show{display:block}
+.tabs{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;background:#161b22;border-bottom:1px solid #30363d;scrollbar-width:none;position:sticky;top:57px;z-index:9}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:8px 16px;background:#21262d;border:none;border-radius:20px;color:#8b949e;font-weight:600;white-space:nowrap;cursor:pointer;font-size:14px}
+.tab.active{background:#ffcc00;color:#000}
+.match{background:#161b22;margin:8px 12px;border-radius:12px;padding:14px;border:1px solid #21262d;transition:.3s;cursor:pointer}
+.match:active{background:#1c2128}
+.match.goal-flash{animation:goalFlash 1.5s}
+@keyframes goalFlash{0%,100%{background:#161b22}30%{background:#238636}}
+.match-header{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;align-items:center}
+.league{color:#8b949e}
+.time{color:#ffcc00;font-weight:700;display:flex;align-items:center;gap:4px}
+.live-dot{display:inline-block;width:8px;height:8px;background:#f85149;border-radius:50%;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.teams{font-size:16px;font-weight:600;margin-bottom:12px;line-height:1.3}
+.score{color:#ffcc00;font-weight:900;margin-left:6px}
+.lock-banner{background:#da3633;color:#fff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;margin-bottom:8px}
+.lock-banner.restart{background:#ffcc00;color:#000}
+.lock-banner.break{background:#58a6ff;color:#fff}
+.odds-row{display:flex;gap:8px}
+.odd{flex:1;background:#21262d;padding:10px 6px;border-radius:8px;text-align:center;cursor:pointer;border:2px solid transparent;position:relative}
+.odd.selected{background:#ffcc00;border-color:#ffcc00}
+.odd.selected .odd-label,.odd.selected .odd-value{color:#000}
+.odd.locked{opacity:.4;cursor:not-allowed}
+.odd.locked::after{content:'🔒';position:absolute;top:2px;right:4px;font-size:10px}
+.odd-label{color:#8b949e;font-size:11px;margin-bottom:2px}
+.odd-value{font-size:16px;font-weight:700}
+.match-hint{font-size:10px;color:#8b949e;text-align:center;margin-top:6px;font-style:italic}
+.badge{position:fixed;bottom:20px;right:20px;background:#ffcc00;color:#000;width:60px;height:60px;border-radius:50%;display:none;justify-content:center;align-items:center;font-weight:900;font-size:22px;cursor:pointer;z-index:50;box-shadow:0 6px 24px rgba(255,204,0,.4)}
+.badge.show{display:flex}
+.slip{position:fixed;bottom:0;left:0;right:0;background:#161b22;border-top:2px solid #ffcc00;padding:16px;transform:translateY(100%);transition:transform .3s;max-height:75vh;overflow-y:auto;z-index:100;border-radius:16px 16px 0 0}
+.slip.open{transform:translateY(0)}
+.slip-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.slip-title{font-weight:700;font-size:18px}
+.close-btn{background:#21262d;border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:20px;cursor:pointer}
+.slip-item{background:#0d1117;padding:12px;border-radius:10px;margin-bottom:8px;font-size:14px;position:relative}
+.slip-item .remove{position:absolute;top:8px;right:8px;background:none;border:none;color:#da3633;font-size:20px;cursor:pointer}
+.slip-item .m{color:#8b949e;font-size:12px;margin-top:4px}
+.slip-item .o{color:#ffcc00;font-weight:700}
+.slip-express{background:#21262d;padding:8px;border-radius:8px;font-size:12px;color:#ffcc00;text-align:center;margin-bottom:8px}
+.input-row{display:flex;gap:8px;margin:12px 0}
+.input-row input{flex:1;padding:12px;background:#0d1117;border:1px solid #30363d;border-radius:10px;color:#fff;font-size:16px;outline:none}
+.quick-btn{padding:12px 14px;background:#21262d;border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;font-size:13px}
+.use-freebet{background:#ffcc00;color:#000;border:none;padding:10px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-bottom:8px;display:none}
+.use-freebet.show{display:block}
+.payout{background:#0d1117;padding:14px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.payout strong{color:#ffcc00;font-size:20px}
+.profile{padding:16px}
+.card{background:#161b22;border-radius:12px;padding:16px;margin-bottom:12px;border:1px solid #21262d}
+.card h3{font-size:16px;margin-bottom:12px;color:#ffcc00}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d;font-size:14px}
+.row:last-child{border:none}
+.row span:first-child{color:#8b949e}
+.history-item{background:#0d1117;padding:10px;border-radius:8px;margin-bottom:6px;font-size:13px}
+.history-item .status{font-weight:700;margin-left:6px}
+.status.pending{color:#ffcc00}
+.status.win{color:#238636}
+.status.lose{color:#da3633}
+.deposit-btn-big{width:100%;padding:14px;background:linear-gradient(135deg,#238636,#2ea043);border:none;color:#fff;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;margin-top:8px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);background:#238636;color:#fff;padding:14px 24px;border-radius:12px;font-weight:600;z-index:1000;transition:transform .3s;max-width:90%;text-align:center;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#161b22;border-top:1px solid #30363d;display:flex;padding:10px 0 max(10px,env(safe-area-inset-bottom));z-index:40}
+.nav-item{flex:1;background:none;border:none;color:#8b949e;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
+.nav-item.active{color:#ffcc00}
+.nav-item .icon{font-size:20px}
+.roulette-wrap{padding:20px 16px;text-align:center}
+.roulette-title{font-size:24px;font-weight:900;margin-bottom:8px}
+.roulette-subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.wheel-container{position:relative;width:280px;height:280px;margin:0 auto 24px}
+.wheel{width:100%;height:100%;border-radius:50%;transition:transform 5s cubic-bezier(.17,.67,.15,1);background:conic-gradient(#ffcc00 0deg 60deg,#238636 60deg 120deg,#f85149 120deg 180deg,#58a6ff 180deg 240deg,#a371f7 240deg 300deg,#ff9500 300deg 360deg);border:6px solid #161b22}
+.wheel::after{content:'';position:absolute;top:50%;left:50%;width:80px;height:80px;background:#161b22;border-radius:50%;transform:translate(-50%,-50%);border:4px solid #ffcc00}
+.wheel-arrow{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:30px solid #ffcc00;z-index:10}
+.wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32px;z-index:5}
+.spin-btn{padding:16px 40px;background:linear-gradient(135deg,#ffcc00,#ff9500);color:#000;border:none;border-radius:30px;font-size:18px;font-weight:900;cursor:pointer;margin-bottom:12px}
+.spin-btn:disabled{opacity:.4;background:#30363d;color:#8b949e}
+.cooldown{color:#8b949e;font-size:14px;margin-top:8px}
+.prizes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:24px}
+.prize-cell{background:#161b22;padding:10px;border-radius:10px;text-align:center;border:1px solid #30363d}
+.prize-cell .sum{font-weight:900;font-size:14px;color:#ffcc00}
+.prize-cell .label{font-size:10px;color:#8b949e;margin-top:2px}
+.result-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:center;z-index:2000;padding:20px}
+.result-modal.show{display:flex}
+.result-box{background:#161b22;border-radius:20px;padding:32px 24px;max-width:340px;width:100%;text-align:center;border:2px solid #ffcc00}
+.result-box h2{font-size:26px;margin-bottom:12px}
+.result-box .amount{font-size:48px;font-weight:900;color:#ffcc00;margin:16px 0}
+.result-box p{color:#8b949e;font-size:14px;margin-bottom:20px}
+.result-box .emoji{font-size:64px;margin-bottom:8px}
+.sync-info{background:#0d1117;padding:8px 12px;border-radius:8px;font-size:11px;color:#8b949e;text-align:center;margin:8px 12px}
+
+/* МОДАЛКА РОСПИСИ */
+.spread-modal{position:fixed;inset:0;background:#0d1117;z-index:500;display:none;flex-direction:column;overflow:hidden}
+.spread-modal.show{display:flex}
+.spread-head{background:#161b22;padding:12px 16px;border-bottom:1px solid #30363d;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px}
+.spread-head-left{flex:1;min-width:0}
+.spread-back{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:0 12px 0 0;flex-shrink:0}
+.spread-league{font-size:11px;color:#8b949e;margin-bottom:2px}
+.spread-teams-line{font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.spread-teams-line .sc{color:#ffcc00;font-weight:900}
+.spread-meta{font-size:11px;color:#8b949e;margin-top:2px}
+.spread-head-right{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.spread-icon-btn{background:#21262d;border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;justify-content:center;align-items:center}
+.spread-icon-btn.active{background:#ffcc00;color:#000}
+.spread-tabs{display:flex;background:#161b22;border-bottom:1px solid #30363d;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.spread-tabs::-webkit-scrollbar{display:none}
+.spread-tab{padding:12px 16px;background:none;border:none;color:#8b949e;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
+.spread-tab.active{color:#ffcc00;border-bottom-color:#ffcc00}
+.spread-body{flex:1;overflow-y:auto;padding-bottom:100px;background:#0d1117}
+
+.market-section{background:#161b22;margin:8px 12px;border-radius:12px;padding:14px;border:1px solid #21262d}
+.market-title{font-size:14px;font-weight:700;color:#ffcc00;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.market-title .star{color:#8b949e;font-size:14px;cursor:pointer;background:none;border:none}
+.market-title .star.active{color:#ffcc00}
+.market-row{display:flex;gap:6px;margin-bottom:6px}
+.market-row:last-child{margin-bottom:0}
+.market-btn{flex:1;background:#21262d;border:2px solid transparent;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;transition:.15s;min-width:0}
+.market-btn:active{transform:scale(.97)}
+.market-btn.selected{background:#ffcc00;border-color:#ffcc00}
+.market-btn.selected .mbl,.market-btn.selected .mbv{color:#000}
+.market-btn.locked{opacity:.4;cursor:not-allowed}
+.market-btn .mbl{display:block;color:#8b949e;font-size:10px;margin-bottom:2px;font-weight:600}
+.market-btn .mbv{display:block;color:#fff;font-size:14px;font-weight:700}
+.total-selector{display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.total-selector::-webkit-scrollbar{display:none}
+.total-num{padding:8px 14px;background:#0d1117;border:2px solid #30363d;border-radius:8px;color:#8b949e;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.total-num.active{background:#ffcc00;border-color:#ffcc00;color:#000}
+.score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.score-cell{background:#21262d;border:2px solid transparent;border-radius:8px;padding:10px 6px;cursor:pointer;text-align:center}
+.score-cell.selected{background:#ffcc00;border-color:#ffcc00}
+.score-cell.selected .scv{color:#000}
+.score-cell .scl{font-size:10px;color:#8b949e;margin-bottom:2px}
+.score-cell .scv{font-size:14px;font-weight:700}
+.stats-body{padding:16px}
+.stat-item{margin-bottom:16px}
+.stat-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;font-weight:600}
+.stat-bar{height:6px;background:#21262d;border-radius:3px;overflow:hidden;display:flex}
+.stat-bar-home{background:#ffcc00;height:100%}
+.stat-bar-away{background:#238636;height:100%}
+.stat-val-home{color:#ffcc00}
+.stat-val-away{color:#238636}
+.no-data{color:#8b949e;text-align:center;padding:40px 20px;font-size:14px}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="logo">BET<span>APP</span></div>
+  <div class="subtitle">Ставки на спорт • Live</div>
+  <div class="auth-box">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuth('login')">Вход</button>
+      <button class="auth-tab" id="tabReg" onclick="switchAuth('reg')">Регистрация</button>
+    </div>
+    <div id="msg" class="msg"></div>
+    <input id="loginInput" placeholder="Логин">
+    <input id="passInput" type="password" placeholder="Пароль">
+    <input id="pass2Input" type="password" placeholder="Повтор пароля" style="display:none">
+    <button class="btn-primary" id="submitBtn" onclick="submitAuth()">Войти</button>
+  </div>
+</div>
+
+<div id="appScreen">
+  <div class="header">
+    <div class="logo">BET<span>APP</span></div>
+    <div class="right-head">
+      <div class="freebet-badge" id="freebetBadge" onclick="showPage('roulette')">🎁 <span id="freebetAmount">0</span></div>
+      <div class="balance" id="balance" onclick="showDeposit()">💰 10 000 ₽</div>
+    </div>
+  </div>
+  <div id="pageBets">
+    <div class="tabs" id="tabs"></div>
+    <div class="sync-info" id="syncInfo">🕒 Синхронизация</div>
+    <div id="matches"></div>
+  </div>
+  <div id="pageRoulette" style="display:none">
+    <div class="roulette-wrap">
+      <div class="roulette-title">🎰 Колесо Фортуны</div>
+      <div class="roulette-subtitle">Крути раз в неделю • Приз от 500 до 15 000 ₽</div>
+      <div class="wheel-container">
+        <div class="wheel-arrow"></div>
+        <div class="wheel" id="wheel"></div>
+        <div class="wheel-center">🎁</div>
+      </div>
+      <button class="spin-btn" id="spinBtn" onclick="spinWheel()">КРУТИТЬ 🎰</button>
+      <div class="cooldown" id="cooldown"></div>
+      <div class="prizes-grid">
+        <div class="prize-cell"><div class="sum">500 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">1 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">2 500 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">5 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">10 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">15 000 ₽</div><div class="label">ДЖЕКПОТ</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="pageProfile" style="display:none">
+    <div class="profile">
+      <div class="card">
+        <h3>👤 Профиль</h3>
+        <div class="row"><span>Логин</span><span id="pName">—</span></div>
+        <div class="row"><span>Баланс</span><span id="pBalance">—</span></div>
+        <div class="row"><span>Фрибеты</span><span id="pFreebet">0 ₽</span></div>
+        <div class="row"><span>Всего ставок</span><span id="pBets">0</span></div>
+        <div class="row"><span>Выигрышей</span><span id="pWins">0</span></div>
+        <div class="row"><span>В игре</span><span id="pInPlay">0 ₽</span></div>
+        <div class="row"><span>Лимит пополнения на сегодня</span><span id="pLimit">—</span></div>
+        <button class="deposit-btn-big" onclick="showDeposit()">💳 Пополнить баланс</button>
+      </div>
+      <div class="card">
+        <h3>📜 История ставок</h3>
+        <div id="history"></div>
+      </div>
+      <button class="btn-primary" style="background:#da3633;color:#fff" onclick="logout()">Выйти из аккаунта</button>
+    </div>
+  </div>
+</div>
+
+<div class="badge" id="badge" onclick="toggleSlip()"><span id="badgeCount">0</span></div>
+<div class="slip" id="slip">
+  <div class="slip-head"><div class="slip-title">🎫 Купон</div><button class="close-btn" onclick="toggleSlip()">✕</button></div>
+  <div id="slipItems"></div>
+  <div id="slipExpress"></div>
+  <button class="use-freebet" id="useFreebetBtn" onclick="toggleFreebet()">🎁 Использовать фрибет</button>
+  <div class="input-row">
+    <input id="stakeInput" type="number" value="100" min="10">
+    <button class="quick-btn" onclick="setStake(100)">100</button>
+    <button class="quick-btn" onclick="setStake(500)">500</button>
+    <button class="quick-btn" onclick="setStake(1000)">1000</button>
+  </div>
+  <div class="payout"><span>Выигрыш:</span><strong id="payout">0 ₽</strong></div>
+  <button class="btn-primary" onclick="placeBet()">Сделать ставку</button>
+</div>
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-item active" onclick="showPage('bets')" id="navBets"><span class="icon">⚽</span>Линия</button>
+  <button class="nav-item" onclick="showPage('roulette')" id="navRoulette"><span class="icon">🎰</span>Рулетка</button>
+  <button class="nav-item" onclick="showPage('profile')" id="navProfile"><span class="icon">👤</span>Профиль</button>
+</div>
+<div class="result-modal" id="resultModal">
+  <div class="result-box">
+    <div class="emoji" id="resultEmoji">🎉</div>
+    <h2 id="resultTitle">Поздравляем!</h2>
+    <div class="amount" id="resultAmount">0 ₽</div>
+    <p id="resultText">Фрибет зачислен</p>
+    <button class="btn-primary" onclick="closeResult()">Забрать 🎁</button>
+  </div>
+</div>
+<div class="spread-modal" id="spreadModal">
+  <div class="spread-head">
+    <button class="spread-back" onclick="closeSpread()">←</button>
+    <div class="spread-head-left" id="spreadHeadInfo"></div>
+    <div class="spread-head-right">
+      <button class="spread-icon-btn" id="statsBtn" onclick="toggleStats()">📊</button>
+    </div>
+  </div>
+  <div class="spread-tabs" id="spreadTabs"></div>
+  <div class="spread-body" id="spreadBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
 let DB = {};
 let currentUser = null;
 let balance = 0;
@@ -16,7 +308,6 @@ let totalLine = 2.5;
 const DAILY_LIMIT = 1500000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const PRIZES = [500, 1000, 2500, 5000, 10000, 15000];
-
 const FIRST_HALF_SEC = 150;
 const BREAK_SEC = 30;
 const SECOND_HALF_SEC = 150;
@@ -84,10 +375,8 @@ function generateMatchScenario(match, cycleIndex){
     goals.push([homeAway, minute]);
   }
   goals.sort((a,b) => a[1] - b[1]);
-  // Красные карточки
   const redHome = r(300) > 0.85 ? (40 + Math.floor(r(301) * 40)) : 0;
   const redAway = r(310) > 0.85 ? (40 + Math.floor(r(311) * 40)) : 0;
-  // Жёлтые
   const yellowHome = 1 + Math.floor(r(320) * 4);
   const yellowAway = 1 + Math.floor(r(330) * 4);
   return { goals, injury1, injury2, totalGoals, redHome, redAway, yellowHome, yellowAway };
@@ -100,14 +389,11 @@ function getMatchState(match){
   const cycleIndex = Math.floor(shiftedSec / CYCLE_SEC);
   const pos = shiftedSec % CYCLE_SEC;
   const scenario = generateMatchScenario(match, cycleIndex);
-
   if(pos < FIRST_HALF_SEC){
     const progress = pos / FIRST_HALF_SEC;
     const gameMinute = Math.floor(progress * (45 + scenario.injury1));
     let h = 0, a = 0;
-    scenario.goals.forEach(g => {
-      if(g[1] <= gameMinute && g[1] <= 45 + scenario.injury1){ if(g[0]===0) h++; else a++; }
-    });
+    scenario.goals.forEach(g => { if(g[1] <= gameMinute && g[1] <= 45 + scenario.injury1){ if(g[0]===0) h++; else a++; } });
     let timeStr = gameMinute + "'";
     if(gameMinute > 45) timeStr = "45+" + (gameMinute - 45) + "'";
     return { phase:'first', live:true, minute:gameMinute, timeStr, score:[h,a], scenario, cycleIndex };
@@ -115,9 +401,7 @@ function getMatchState(match){
   if(pos < FIRST_HALF_SEC + BREAK_SEC){
     const breakLeft = FIRST_HALF_SEC + BREAK_SEC - pos;
     let h = 0, a = 0;
-    scenario.goals.forEach(g => {
-      if(g[1] <= 45 + scenario.injury1){ if(g[0]===0) h++; else a++; }
-    });
+    scenario.goals.forEach(g => { if(g[1] <= 45 + scenario.injury1){ if(g[0]===0) h++; else a++; } });
     return { phase:'break', live:false, isBreak:true, breakLeft, minute:45, timeStr:'Перерыв', score:[h,a], scenario, cycleIndex };
   }
   if(pos < FIRST_HALF_SEC + BREAK_SEC + SECOND_HALF_SEC){
@@ -126,9 +410,7 @@ function getMatchState(match){
     const totalSecond = 45 + scenario.injury2;
     const gameMinute = 45 + Math.floor(progress * totalSecond);
     let h = 0, a = 0;
-    scenario.goals.forEach(g => {
-      if(g[1] <= gameMinute){ if(g[0]===0) h++; else a++; }
-    });
+    scenario.goals.forEach(g => { if(g[1] <= gameMinute){ if(g[0]===0) h++; else a++; } });
     let timeStr = gameMinute + "'";
     if(gameMinute > 90) timeStr = "90+" + (gameMinute - 90) + "'";
     return { phase:'second', live:true, minute:gameMinute, timeStr, score:[h,a], scenario, cycleIndex };
@@ -140,7 +422,6 @@ function getMatchState(match){
   return { phase:'after', live:false, isFinished:true, afterLeft, minute:90 + scenario.injury2, timeStr:'Завершён', score:[h,a], scenario, cycleIndex };
 }
 
-// ============ КОЭФФИЦИЕНТЫ ============
 function getMatchOdds(match, state){
   const base = match.baseOdds;
   if(!state.live) return base.map(o => o);
@@ -183,20 +464,17 @@ function getMatchOdds(match, state){
   });
 }
 
-// Кэфы для рынков росписи
 function getTotalOdds(state, line){
-  // Тотал больше/меньше line
   const [h, a] = state.score;
   const totalGoals = h + a;
   const min = state.minute;
-  const progress = Math.min(min / 90, 1);
-  const expectedMore = Math.max(0, line - totalGoals);
   const timeLeft = Math.max(5, 90 - min);
-  // Базовая вероятность забить ещё N голов
+  const expectedMore = Math.max(0, line - totalGoals);
   const avgGoalsPerMin = 0.03;
   const remainingGoals = avgGoalsPerMin * timeLeft;
   let overProb;
-  if(expectedMore <= 0) overProb = 0.99;
+  if(totalGoals > line) overProb = 0.995;
+  else if(expectedMore <= 0) overProb = 0.99;
   else if(expectedMore >= 3) overProb = 0.05;
   else {
     const poissonLambda = remainingGoals;
@@ -208,8 +486,6 @@ function getTotalOdds(state, line){
     }
     overProb = 1 - cumulative;
   }
-  // Учет текущего счёта (если уже больше — 1.01)
-  if(totalGoals > line) overProb = 0.995;
   overProb = Math.max(0.02, Math.min(0.98, overProb));
   const underProb = 1 - overProb;
   let over = Math.round((1 / overProb) * 100) / 100;
@@ -225,7 +501,7 @@ function getBttsOdds(state){
   const [h, a] = state.score;
   const min = state.minute;
   const timeLeft = Math.max(5, 90 - min);
-  if(h > 0 && a > 0) return [1.01, 15.00]; // уже сбылось
+  if(h > 0 && a > 0) return [1.01, 15.00];
   if(timeLeft < 15) return [8.00, 1.10];
   const prob = 0.55 - (timeLeft / 90) * 0.05 + (min / 90) * 0.15;
   const yesProb = Math.max(0.08, Math.min(0.85, prob));
@@ -237,7 +513,6 @@ function getNextGoalOdds(state){
   const diff = h - a;
   const min = state.minute;
   const progress = Math.min(min / 90, 1);
-  // Базовая вероятность
   let homeProb = 0.45 + diff * 0.05;
   let awayProb = 0.45 - diff * 0.05;
   let noGoalProb = 0.10 + progress * 0.7;
@@ -245,9 +520,7 @@ function getNextGoalOdds(state){
   awayProb = Math.max(0.05, awayProb * (1 - progress * 0.5));
   noGoalProb = Math.max(0.05, noGoalProb);
   const sum = homeProb + awayProb + noGoalProb;
-  homeProb /= sum;
-  awayProb /= sum;
-  noGoalProb /= sum;
+  homeProb /= sum; awayProb /= sum; noGoalProb /= sum;
   return [
     Math.round((1/homeProb) * 100) / 100,
     Math.round((1/noGoalProb) * 100) / 100,
@@ -256,35 +529,14 @@ function getNextGoalOdds(state){
 }
 
 function getDoubleChanceOdds(odds){
-  // 1X, 12, X2 из основных
   const [o1, oX, o2] = odds;
   if(o1 === 0 || oX === 0 || o2 === 0) return [0,0,0];
   const p1 = 1/o1, pX = 1/oX, p2 = 1/o2;
   const s = p1 + pX + p2;
-  const p1x = (p1 + pX) / s;
-  const p12 = (p1 + p2) / s;
-  const px2 = (pX + p2) / s;
   return [
-    Math.round((1/p1x) * 100) / 100,
-    Math.round((1/p12) * 100) / 100,
-    Math.round((1/px2) * 100) / 100
-  ];
-}
-
-function getHandicapOdds(state){
-  const [h, a] = state.score;
-  const diff = h - a;
-  const min = state.minute;
-  const progress = Math.min(min / 90, 1);
-  // Фора -1.5 для хозяев: должны выиграть с разницей 2+
-  let p1h = 0.5;
-  if(diff >= 2) p1h = 0.95 - progress * 0.1;
-  else if(diff === 1) p1h = 0.4 - progress * 0.3;
-  else p1h = 0.15 - progress * 0.1;
-  p1h = Math.max(0.02, Math.min(0.98, p1h));
-  return [
-    Math.round((1/p1h) * 100) / 100,
-    Math.round((1/(1-p1h)) * 100) / 100
+    Math.round((1/((p1 + pX) / s)) * 100) / 100,
+    Math.round((1/((p1 + p2) / s)) * 100) / 100,
+    Math.round((1/((pX + p2) / s)) * 100) / 100
   ];
 }
 
@@ -292,13 +544,13 @@ function getExactScoreOdds(state){
   const [h, a] = state.score;
   const min = state.minute;
   const timeLeft = Math.max(5, 90 - min);
-  const scores = ['0:0','1:0','0:1','1:1','2:0','0:2','2:1','1:2','2:2','3:0','0:3','3:1','1:3'];
+  const scores = ['0:0','1:0','0:1','1:1','2:0','0:2','2:1','1:2','2:2'];
   const current = h + ':' + a;
   return scores.map(s => {
     let prob;
     const [sh, sa] = s.split(':').map(Number);
     if(s === current) prob = 0.5 + (1 - timeLeft/90) * 0.45;
-    else if(sh < h || sa < a) prob = 0.01;
+    else if(sh < h || sa < a) prob = 0.005;
     else {
       const goalDiff = (sh - h) + (sa - a);
       prob = Math.pow(0.35, goalDiff) * (timeLeft / 90) * 0.25;
@@ -311,16 +563,40 @@ function getExactScoreOdds(state){
 function getGoalInHalfOdds(state, half){
   const min = state.minute;
   if(half === 1){
-    const timeInHalf = Math.max(0, 45 - min);
     if(min >= 45) return [1.01, 15.00];
+    const timeInHalf = Math.max(0, 45 - min);
     const prob = Math.min(0.9, Math.max(0.1, 0.5 + timeInHalf / 90));
     return [Math.round((1/prob) * 100)/100, Math.round((1/(1-prob)) * 100)/100];
   } else {
-    const timeInHalf = Math.max(0, 90 - min);
     if(min >= 90) return [1.01, 15.00];
+    const timeInHalf = Math.max(0, 90 - min);
     const prob = Math.min(0.9, Math.max(0.1, 0.5 + timeInHalf / 90));
     return [Math.round((1/prob) * 100)/100, Math.round((1/(1-prob)) * 100)/100];
   }
+}
+
+function getMatchStats(match, state){
+  const seed = match.id * 999 + state.cycleIndex * 31;
+  const r = (o) => seededRandom(seed + o);
+  const progress = Math.min(state.minute / 90, 1);
+  const basePossHome = 45 + Math.floor(r(1) * 15);
+  const possHome = Math.min(70, Math.max(30, basePossHome + (state.score[0] - state.score[1]) * 2));
+  const possAway = 100 - possHome;
+  const attacksHome = Math.floor(progress * (50 + r(2) * 40));
+  const attacksAway = Math.floor(progress * (50 + r(3) * 40));
+  const dangerousHome = Math.floor(attacksHome * 0.4);
+  const dangerousAway = Math.floor(attacksAway * 0.4);
+  const shotsHome = Math.floor(progress * (8 + r(4) * 8));
+  const shotsAway = Math.floor(progress * (8 + r(5) * 8));
+  const onTargetHome = Math.max(state.score[0], Math.floor(shotsHome * 0.4));
+  const onTargetAway = Math.max(state.score[1], Math.floor(shotsAway * 0.4));
+  const cornersHome = Math.floor(progress * (3 + r(6) * 5));
+  const cornersAway = Math.floor(progress * (3 + r(7) * 5));
+  const redHome = state.minute >= state.scenario.redHome && state.scenario.redHome > 0 ? 1 : 0;
+  const redAway = state.minute >= state.scenario.redAway && state.scenario.redAway > 0 ? 1 : 0;
+  const yellowHome = Math.floor(progress * state.scenario.yellowHome);
+  const yellowAway = Math.floor(progress * state.scenario.yellowAway);
+  return { possHome, possAway, attacksHome, attacksAway, dangerousHome, dangerousAway, shotsHome, shotsAway, onTargetHome, onTargetAway, cornersHome, cornersAway, redHome, redAway, yellowHome, yellowAway };
 }
 
 function checkLock(match, state){
@@ -363,7 +639,6 @@ function getTodayDeposit(){
   return DB[currentUser].depositToday || 0;
 }
 
-// ============ АВТОРИЗАЦИЯ ============
 function switchAuth(mode){
   authMode = mode;
   document.getElementById('tabLogin').classList.toggle('active', mode==='login');
@@ -434,10 +709,8 @@ function updateBalanceUI(){
 function updateFreebetUI(){
   const badge = document.getElementById('freebetBadge');
   const amount = document.getElementById('freebetAmount');
-  if(freebet > 0){
-    badge.classList.add('show');
-    amount.textContent = freebet.toLocaleString('ru-RU') + ' ₽';
-  } else badge.classList.remove('show');
+  if(freebet > 0){ badge.classList.add('show'); amount.textContent = freebet.toLocaleString('ru-RU') + ' ₽'; }
+  else badge.classList.remove('show');
   const btn = document.getElementById('useFreebetBtn');
   if(btn) btn.classList.toggle('show', freebet > 0 && bets.length > 0);
 }
@@ -486,31 +759,22 @@ function renderProfile(){
   limitEl.textContent = left.toLocaleString('ru-RU') + ' ₽';
   limitEl.style.color = left <= 0 ? '#da3633' : (left < 500000 ? '#ffcc00' : '#238636');
   const hist = document.getElementById('history');
-  if(!betHistory.length){
-    hist.innerHTML = '<div style="color:#8b949e;text-align:center;padding:20px;font-size:13px">Ставок пока нет</div>';
-    return;
-  }
+  if(!betHistory.length){ hist.innerHTML = '<div style="color:#8b949e;text-align:center;padding:20px;font-size:13px">Ставок пока нет</div>'; return; }
   hist.innerHTML = betHistory.slice().reverse().map(b => {
     const statusText = b.status === 'pending' ? '⏳ В игре' : b.status === 'win' ? '✅ Выигрыш' : '❌ Проигрыш';
-    return '<div class="history-item"><div>' + b.items.map(i => (i.market || 'Исход') + ': ' + i.home + '—' + i.away).join(', ') + '</div><div style="color:#8b949e;font-size:11px;margin-top:4px">Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) + '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
+    return '<div class="history-item"><div>' + b.items.map(i => (i.market || 'Исход') + ': ' + (i.label || '') + ' ' + i.home + '—' + i.away).join(', ') + '</div><div style="color:#8b949e;font-size:11px;margin-top:4px">Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) + '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
   }).join('');
 }
 
-// ============ РУЛЕТКА ============
 function renderRoulette(){
   const lastSpin = DB[currentUser].lastSpin || 0;
   const nextSpin = lastSpin + WEEK_MS;
   const now = Date.now();
   const btn = document.getElementById('spinBtn');
   const cd = document.getElementById('cooldown');
-  if(now >= nextSpin){
-    btn.disabled = false;
-    btn.textContent = 'КРУТИТЬ 🎰';
-    cd.textContent = 'Доступно прямо сейчас!';
-    cd.style.color = '#238636';
-  } else {
-    btn.disabled = true;
-    btn.textContent = '⏳ Недоступно';
+  if(now >= nextSpin){ btn.disabled = false; btn.textContent = 'КРУТИТЬ 🎰'; cd.textContent = 'Доступно прямо сейчас!'; cd.style.color = '#238636'; }
+  else {
+    btn.disabled = true; btn.textContent = '⏳ Недоступно';
     const left = nextSpin - now;
     const days = Math.floor(left / (24*60*60*1000));
     const hours = Math.floor((left % (24*60*60*1000)) / (60*60*1000));
@@ -523,8 +787,7 @@ function spinWheel(){
   const lastSpin = DB[currentUser].lastSpin || 0;
   if(Date.now() < lastSpin + WEEK_MS) return showToast('⏳ Ещё рано!', false);
   const btn = document.getElementById('spinBtn');
-  btn.disabled = true;
-  btn.textContent = 'Крутится...';
+  btn.disabled = true; btn.textContent = 'Крутится...';
   const prizeIndex = Math.floor(Math.random() * PRIZES.length);
   const prize = PRIZES[prizeIndex];
   const targetAngle = 360 * 5 + (360 - prizeIndex * 60 - 30);
@@ -536,16 +799,9 @@ function spinWheel(){
     saveDB();
     updateFreebetUI();
     document.getElementById('resultAmount').textContent = '+' + prize.toLocaleString('ru-RU') + ' ₽';
-    if(prize === 15000){
-      document.getElementById('resultEmoji').textContent = '👑';
-      document.getElementById('resultTitle').textContent = 'ДЖЕКПОТ!';
-    } else if(prize >= 5000){
-      document.getElementById('resultEmoji').textContent = '🔥';
-      document.getElementById('resultTitle').textContent = 'Крупный приз!';
-    } else {
-      document.getElementById('resultEmoji').textContent = '🎉';
-      document.getElementById('resultTitle').textContent = 'Поздравляем!';
-    }
+    if(prize === 15000){ document.getElementById('resultEmoji').textContent = '👑'; document.getElementById('resultTitle').textContent = 'ДЖЕКПОТ!'; }
+    else if(prize >= 5000){ document.getElementById('resultEmoji').textContent = '🔥'; document.getElementById('resultTitle').textContent = 'Крупный приз!'; }
+    else { document.getElementById('resultEmoji').textContent = '🎉'; document.getElementById('resultTitle').textContent = 'Поздравляем!'; }
     document.getElementById('resultText').textContent = 'Фрибет зачислен';
     document.getElementById('resultModal').classList.add('show');
     renderRoulette();
@@ -555,23 +811,17 @@ function closeResult(){
   document.getElementById('resultModal').classList.remove('show');
   setTimeout(() => {
     const w = document.getElementById('wheel');
-    w.style.transition = 'none';
-    w.style.transform = 'rotate(0deg)';
+    w.style.transition = 'none'; w.style.transform = 'rotate(0deg)';
     setTimeout(() => { w.style.transition = 'transform 5s cubic-bezier(.17,.67,.15,1)'; }, 50);
   }, 300);
 }
 
-// ============ МАТЧИ (список) ============
 function renderTabs(){
   document.getElementById('tabs').innerHTML = SPORTS.map(s =>
     '<button class="tab ' + (s===selectedSport?'active':'') + '" onclick="selectSport(\'' + s + '\')">' + s + '</button>'
   ).join('');
 }
-function selectSport(s){
-  selectedSport = s;
-  renderTabs();
-  renderMatches();
-}
+function selectSport(s){ selectedSport = s; renderTabs(); renderMatches(); }
 
 function renderMatches(){
   const list = MATCHES[selectedSport] || [];
@@ -580,10 +830,479 @@ function renderMatches(){
     const odds = getMatchOdds(m, state);
     const lock = checkLock(m, state);
     const labels = selectedSport === '🎾 Теннис' ? ['П1','','П2'] : ['1','X','2'];
-
     let timeDisplay = '';
     if(state.live) timeDisplay = '<span class="live-dot"></span>' + state.timeStr;
     else if(state.isBreak) timeDisplay = '⏸ Перерыв ' + formatTimeLeft(state.breakLeft);
     else if(state.isFinished) timeDisplay = '⏱ Новый через ' + formatTimeLeft(state.afterLeft);
-
     let banner = '';
+    if(state.isFinished) banner = '<div class="lock-banner restart">✅ Матч завершён. Новый через ' + formatTimeLeft(state.afterLeft) + '</div>';
+    else if(state.isBreak) banner = '<div class="lock-banner break">⏸ Перерыв — 2-й тайм через ' + formatTimeLeft(state.breakLeft) + '</div>';
+    else if(lock.locked) banner = '<div class="lock-banner">' + lock.reason + '</div>';
+    const showScore = state.live || state.isFinished || state.isBreak;
+    return '<div class="match" id="match-' + m.id + '" onclick="openSpread(' + m.id + ')">' +
+      '<div class="match-header"><span class="league">' + m.league + '</span><span class="time">' + timeDisplay + '</span></div>' +
+      '<div class="teams">' + m.home + ' — ' + m.away + (showScore ? '<span class="score">' + state.score[0] + ':' + state.score[1] + '</span>' : '') + '</div>' +
+      banner +
+      '<div class="odds-row">' +
+        odds.map((o,i) => o===0 ? '' :
+          '<div class="odd ' + (isSelected(m.id,i)?'selected ':'') + (lock.locked?'locked':'') + '" ' +
+          (lock.locked ? '' : 'onclick="event.stopPropagation();addBet(' + m.id + ',null,' + i + ',' + o + ')"') + '>' +
+          '<div class="odd-label">' + labels[i] + '</div>' +
+          '<div class="odd-value">' + o.toFixed(2) + '</div></div>'
+        ).join('') +
+      '</div>' +
+      '<div class="match-hint">👆 Тапни на матч — открыть все рынки</div>' +
+    '</div>';
+  }).join('');
+}
+
+function isSelected(matchId, outcome, marketKey){
+  if(marketKey !== undefined){
+    return bets.some(b => b.matchId === matchId && b.marketKey === marketKey && b.outcome === outcome);
+  }
+  return bets.some(b => b.matchId === matchId && !b.marketKey && b.outcome === outcome);
+}
+
+function addBet(matchId, market, outcome, odds, label, marketKey){
+  const all = Object.values(MATCHES).flat();
+  const m = all.find(x => x.id === matchId);
+  if(!m) return;
+  const state = getMatchState(m);
+  const lock = checkLock(m, state);
+  if(lock.locked) return showToast('⏸ Ставки заблокированы', false);
+  const key = marketKey || null;
+  const finalLabel = label || ['1','X','2'][outcome] || '';
+  const idx = bets.findIndex(b => b.matchId === matchId && b.marketKey === key && b.outcome === outcome);
+  if(idx !== -1) bets.splice(idx, 1);
+  else bets.push({ matchId, outcome, odds, label: finalLabel, home: m.home, away: m.away, market: market || 'Исход', marketKey: key });
+  renderMatches();
+  renderSlip();
+  if(currentSpreadMatch && currentSpreadMatch === matchId) renderSpreadBody();
+}
+
+function removeBet(i){ bets.splice(i, 1); renderMatches(); renderSlip(); if(currentSpreadMatch) renderSpreadBody(); }
+
+function renderSlip(){
+  const badge = document.getElementById('badge');
+  document.getElementById('badgeCount').textContent = bets.length;
+  badge.classList.toggle('show', bets.length > 0);
+  document.getElementById('slipItems').innerHTML = bets.length
+    ? bets.map((b,i) => '<div class="slip-item"><button class="remove" onclick="removeBet(' + i + ')">✕</button><div>' + b.home + ' — ' + b.away + '</div><div class="m">' + (b.market || 'Исход') + ': ' + b.label + ' <span class="o">@ ' + b.odds.toFixed(2) + '</span></div></div>').join('')
+    : '<div style="color:#8b949e;text-align:center;padding:20px">Купон пуст</div>';
+  if(bets.length > 1){
+    document.getElementById('slipExpress').innerHTML = '<div class="slip-express">🔥 Экспресс: ' + bets.length + ' событий</div>';
+  } else {
+    document.getElementById('slipExpress').innerHTML = '';
+  }
+  updateFreebetUI();
+  updatePayout();
+}
+
+function toggleFreebet(){
+  if(freebet <= 0) return showToast('У вас нет фрибетов', false);
+  useFreebet = !useFreebet;
+  const btn = document.getElementById('useFreebetBtn');
+  if(useFreebet){ btn.textContent = '✅ Фрибет применяется'; btn.style.background = '#238636'; btn.style.color = '#fff'; }
+  else { btn.textContent = '🎁 Использовать фрибет (' + freebet.toLocaleString('ru-RU') + ' ₽)'; btn.style.background = '#ffcc00'; btn.style.color = '#000'; }
+  updatePayout();
+}
+
+function updatePayout(){
+  const stake = Number(document.getElementById('stakeInput').value) || 0;
+  const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
+  const win = stake * (bets.length ? totalOdds : 0);
+  let text = win.toFixed(0) + ' ₽';
+  if(useFreebet && freebet > 0) text += ' (' + Math.min(stake, freebet) + '₽ фрибет)';
+  document.getElementById('payout').textContent = text;
+}
+document.getElementById('stakeInput').addEventListener('input', updatePayout);
+
+function setStake(v){ document.getElementById('stakeInput').value = v; updatePayout(); }
+function toggleSlip(){ document.getElementById('slip').classList.toggle('open'); }
+
+function placeBet(){
+  if(!bets.length) return showToast('Купон пуст', false);
+  const stake = Number(document.getElementById('stakeInput').value) || 0;
+  if(stake < 10) return showToast('Мин. ставка 10 ₽', false);
+  let realMoneyStake = stake, freebetUsed = 0;
+  if(useFreebet && freebet > 0){ freebetUsed = Math.min(stake, freebet); realMoneyStake = stake - freebetUsed; }
+  if(realMoneyStake > balance) return showToast('Недостаточно средств', false);
+  const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
+  const potentialWin = stake * totalOdds;
+  balance -= realMoneyStake;
+  freebet -= freebetUsed;
+  const items = bets.map(b => {
+    const all = Object.values(MATCHES).flat();
+    const m = all.find(x => x.id === b.matchId);
+    const state = getMatchState(m);
+    return { ...b, cycleIndex: state.cycleIndex };
+  });
+  const record = { id: Date.now(), items, stake, freebetUsed, totalOdds, potentialWin, status: 'pending', createdAt: Date.now() };
+  betHistory.push(record);
+  DB[currentUser].balance = balance;
+  DB[currentUser].freebet = freebet;
+  DB[currentUser].history = betHistory;
+  saveDB();
+  updateBalanceUI();
+  updateFreebetUI();
+  useFreebet = false;
+  const fbBtn = document.getElementById('useFreebetBtn');
+  fbBtn.textContent = '🎁 Использовать фрибет';
+  fbBtn.style.background = '#ffcc00';
+  fbBtn.style.color = '#000';
+  let msg = '✅ Ставка ' + stake + ' ₽';
+  if(freebetUsed > 0) msg += ' (фрибет ' + freebetUsed + ' ₽)';
+  showToast(msg + ' | Потенциал: ' + potentialWin.toFixed(0) + ' ₽');
+  bets = [];
+  renderMatches();
+  renderSlip();
+  toggleSlip();
+  if(currentSpreadMatch) renderSpreadBody();
+}
+
+/* ============ МОДАЛКА РОСПИСИ ============ */
+function openSpread(matchId){
+  const all = Object.values(MATCHES).flat();
+  const m = all.find(x => x.id === matchId);
+  if(!m) return;
+  currentSpreadMatch = matchId;
+  currentSpreadTab = 'match';
+  currentSpreadStat = false;
+  document.getElementById('spreadModal').classList.add('show');
+  renderSpreadHead();
+  renderSpreadTabs();
+  renderSpreadBody();
+}
+
+function closeSpread(){
+  document.getElementById('spreadModal').classList.remove('show');
+  currentSpreadMatch = null;
+}
+
+function toggleStats(){
+  currentSpreadStat = !currentSpreadStat;
+  document.getElementById('statsBtn').classList.toggle('active', currentSpreadStat);
+  renderSpreadBody();
+}
+
+function renderSpreadHead(){
+  const all = Object.values(MATCHES).flat();
+  const m = all.find(x => x.id === currentSpreadMatch);
+  if(!m){ return; }
+  const state = getMatchState(m);
+  const showScore = state.live || state.isFinished || state.isBreak;
+  const timeStr = state.live ? '🔴 ' + state.timeStr : (state.isBreak ? '⏸ Перерыв' : (state.isFinished ? 'Завершён' : 'Скоро'));
+  document.getElementById('spreadHeadInfo').innerHTML =
+    '<div class="spread-league">' + m.league + '</div>' +
+    '<div class="spread-teams-line"><span>' + m.home + ' — ' + m.away + '</span>' +
+    (showScore ? '<span class="sc">' + state.score[0] + ':' + state.score[1] + '</span>' : '') + '</div>' +
+    '<div class="spread-meta">' + timeStr + '</div>';
+}
+
+function renderSpreadTabs(){
+  const tabs = [
+    { id:'match', label:'Матч' },
+    { id:'half1', label:'1-й тайм' },
+    { id:'half2', label:'2-й тайм' }
+  ];
+  document.getElementById('spreadTabs').innerHTML = tabs.map(t =>
+    '<button class="spread-tab ' + (currentSpreadTab===t.id?'active':'') + '" onclick="setSpreadTab(\'' + t.id + '\')">' + t.label + '</button>'
+  ).join('');
+}
+
+function setSpreadTab(id){
+  currentSpreadTab = id;
+  renderSpreadTabs();
+  renderSpreadBody();
+}
+
+function marketBtn(label, value, opts){
+  // opts: { matchId, market, outcome, odds, label, marketKey }
+  const selected = isSelected(opts.matchId, opts.outcome, opts.marketKey);
+  const state = getMatchState(Object.values(MATCHES).flat().find(x => x.id === opts.matchId));
+  const lock = checkLock(state.match, state);
+  const locked = lock.locked;
+  return '<div class="market-btn ' + (selected?'selected ':'') + (locked?'locked':'') + '" ' +
+    (locked ? '' : 'onclick="event.stopPropagation();marketClick(' + opts.matchId + ',\'' + (opts.market||'') + '\',' + opts.outcome + ',' + value + ',\'' + (opts.label||'') + '\',\'' + (opts.marketKey||'') + '\')"') + '>' +
+    '<span class="mbl">' + label + '</span>' +
+    '<span class="mbv">' + (value > 0 ? value.toFixed(2) : '—') + '</span>' +
+    '</div>';
+}
+
+function marketClick(matchId, market, outcome, odds, label, marketKey){
+  addBet(matchId, market, outcome, odds, label, marketKey);
+}
+
+function renderSpreadBody(){
+  const body = document.getElementById('spreadBody');
+  if(currentSpreadStat){
+    renderStats(body);
+    return;
+  }
+  const all = Object.values(MATCHES).flat();
+  const m = all.find(x => x.id === currentSpreadMatch);
+  if(!m){ body.innerHTML = '<div class="no-data">Матч не найден</div>'; return; }
+  const state = getMatchState(m);
+  const lock = checkLock(m, state);
+  const mainOdds = getMatchOdds(m, state);
+  const dcOdds = getDoubleChanceOdds(mainOdds);
+  const nextGoal = getNextGoalOdds(state);
+  const btts = getBttsOdds(state);
+  const exact = getExactScoreOdds(state);
+  let html = '';
+
+  if(lock.locked){
+    html += '<div style="background:#da3633;color:#fff;padding:12px;margin:8px 12px;border-radius:8px;text-align:center;font-weight:600;font-size:13px">' + lock.reason + '</div>';
+  }
+
+  // === ОСНОВНОЙ ИСХОД ===
+  if(currentSpreadTab === 'match' || currentSpreadTab === 'half1' || currentSpreadTab === 'half2'){
+    const showMain = currentSpreadTab === 'match';
+    if(showMain){
+      html += '<div class="market-section"><div class="market-title">Исход матча (основное время)</div>' +
+        '<div class="market-row">' +
+          marketBtn('1', mainOdds[0], { matchId:m.id, market:'Исход', outcome:0, label:'1', marketKey:'main_1' }) +
+          marketBtn('X', mainOdds[1], { matchId:m.id, market:'Исход', outcome:1, label:'X', marketKey:'main_X' }) +
+          marketBtn('2', mainOdds[2], { matchId:m.id, market:'Исход', outcome:2, label:'2', marketKey:'main_2' }) +
+        '</div>' +
+        '<div class="market-row">' +
+          marketBtn('1X', dcOdds[0], { matchId:m.id, market:'Двойной шанс', outcome:0, label:'1X', marketKey:'dc_1X' }) +
+          marketBtn('12', dcOdds[1], { matchId:m.id, market:'Двойной шанс', outcome:1, label:'12', marketKey:'dc_12' }) +
+          marketBtn('X2', dcOdds[2], { matchId:m.id, market:'Двойной шанс', outcome:2, label:'X2', marketKey:'dc_X2' }) +
+        '</div>' +
+      '</div>';
+    }
+  }
+
+  // === ТОТАЛ ===
+  if(currentSpreadTab === 'match'){
+    html += '<div class="market-section"><div class="market-title">Тотал голов в матче</div>';
+    html += '<div class="total-selector">';
+    [0.5, 1.5, 2, 2.5, 3, 3.5, 4.5].forEach(n => {
+      html += '<button class="total-num ' + (totalLine===n?'active':'') + '" onclick="setTotal(' + n + ')">' + n + '</button>';
+    });
+    html += '</div>';
+    const tOdds = getTotalOdds(state, totalLine);
+    html += '<div class="market-row">' +
+      marketBtn('Больше', tOdds[0], { matchId:m.id, market:'Тотал ' + totalLine, outcome:0, label:'ТБ ' + totalLine, marketKey:'total_over_' + totalLine }) +
+      marketBtn('Меньше', tOdds[1], { matchId:m.id, market:'Тотал ' + totalLine, outcome:1, label:'ТМ ' + totalLine, marketKey:'total_under_' + totalLine }) +
+    '</div></div>';
+  }
+
+  if(currentSpreadTab === 'half1'){
+    const halfOdds = getGoalInHalfOdds(state, 1);
+    html += '<div class="market-section"><div class="market-title">Тотал голов в 1-м тайме</div>' +
+      '<div class="market-row">' +
+        marketBtn('Больше 0.5', halfOdds[0], { matchId:m.id, market:'Тотал 1-й тайм 0.5', outcome:0, label:'ТБ 0.5 1Т', marketKey:'h1_over_05' }) +
+        marketBtn('Меньше 0.5', halfOdds[1], { matchId:m.id, market:'Тотал 1-й тайм 0.5', outcome:1, label:'ТМ 0.5 1Т', marketKey:'h1_under_05' }) +
+      '</div>' +
+    '</div>';
+  }
+
+  if(currentSpreadTab === 'half2'){
+    const halfOdds = getGoalInHalfOdds(state, 2);
+    html += '<div class="market-section"><div class="market-title">Тотал голов во 2-м тайме</div>' +
+      '<div class="market-row">' +
+        marketBtn('Больше 0.5', halfOdds[0], { matchId:m.id, market:'Тотал 2-й тайм 0.5', outcome:0, label:'ТБ 0.5 2Т', marketKey:'h2_over_05' }) +
+        marketBtn('Меньше 0.5', halfOdds[1], { matchId:m.id, market:'Тотал 2-й тайм 0.5', outcome:1, label:'ТМ 0.5 2Т', marketKey:'h2_under_05' }) +
+      '</div>' +
+    '</div>';
+  }
+
+  // === ОБЕ ЗАБЬЮТ ===
+  if(currentSpreadTab === 'match'){
+    html += '<div class="market-section"><div class="market-title">Обе команды забьют</div>' +
+      '<div class="market-row">' +
+        marketBtn('Да', btts[0], { matchId:m.id, market:'Обе забьют', outcome:0, label:'Да', marketKey:'btts_yes' }) +
+        marketBtn('Нет', btts[1], { matchId:m.id, market:'Обе забьют', outcome:1, label:'Нет', marketKey:'btts_no' }) +
+      '</div>' +
+    '</div>';
+
+    html += '<div class="market-section"><div class="market-title">Следующий гол</div>' +
+      '<div class="market-row">' +
+        marketBtn(m.home, nextGoal[0], { matchId:m.id, market:'Следующий гол', outcome:0, label:m.home, marketKey:'next_1' }) +
+        marketBtn('Никто', nextGoal[1], { matchId:m.id, market:'Следующий гол', outcome:1, label:'Никто', marketKey:'next_none' }) +
+        marketBtn(m.away, nextGoal[2], { matchId:m.id, market:'Следующий гол', outcome:2, label:m.away, marketKey:'next_2' }) +
+      '</div>' +
+    '</div>';
+  }
+
+  // === ТОЧНЫЙ СЧЁТ ===
+  if(currentSpreadTab === 'match'){
+    html += '<div class="market-section"><div class="market-title">Точный счёт</div><div class="score-grid">';
+    exact.forEach(e => {
+      html += '<div class="score-cell ' + (isSelected(m.id, e.score, 'exact_' + e.score)?'selected':'') + '" onclick="event.stopPropagation();marketClick(' + m.id + ',\'Точный счёт\',\'' + e.score + '\',' + e.odds + ',\'' + e.score + '\',\'exact_' + e.score + '\')">' +
+        '<div class="scl">' + e.score + '</div><div class="scv">' + e.odds.toFixed(2) + '</div></div>';
+    });
+    html += '</div></div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function setTotal(n){
+  totalLine = n;
+  renderSpreadBody();
+}
+
+/* ============ СТАТИСТИКА ============ */
+function renderStats(container){
+  const all = Object.values(MATCHES).flat();
+  const m = all.find(x => x.id === currentSpreadMatch);
+  if(!m){ container.innerHTML = '<div class="no-data">Матч не найден</div>'; return; }
+  const state = getMatchState(m);
+  if(!state.live && !state.isBreak && !state.isFinished){
+    container.innerHTML = '<div class="no-data">📊 Статистика появится с началом матча</div>';
+    return;
+  }
+  const s = getMatchStats(m, state);
+  container.innerHTML = '<div class="stats-body">' +
+    '<div class="stat-item"><div class="stat-row"><span>' + m.home + '</span><span>' + m.away + '</span></div>' +
+      '<div class="stat-row"><span class="stat-val-home">' + s.possHome + '%</span><span>Владение</span><span class="stat-val-away">' + s.possAway + '%</span></div>' +
+      '<div class="stat-bar"><div class="stat-bar-home" style="width:' + s.possHome + '%"></div><div class="stat-bar-away" style="width:' + s.possAway + '%"></div></div>' +
+    '</div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">' + s.shotsHome + '</span><span>Удары</span><span class="stat-val-away">' + s.shotsAway + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">' + s.onTargetHome + '</span><span>Удары в створ</span><span class="stat-val-away">' + s.onTargetAway + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">' + s.attacksHome + '</span><span>Атаки</span><span class="stat-val-away">' + s.attacksAway + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">' + s.dangerousHome + '</span><span>Опасные атаки</span><span class="stat-val-away">' + s.dangerousAway + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">' + s.cornersHome + '</span><span>Угловые</span><span class="stat-val-away">' + s.cornersAway + '</span></div></div>' +
+    '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">🟨 ' + s.yellowHome + ' ' + (s.redHome ? '🟥 ' + s.redHome : '') + '</span><span>Карточки</span><span class="stat-val-away">' + (s.redAway ? '🟥 ' + s.redAway + ' ' : '') + '🟨 ' + s.yellowAway + '</span></div></div>' +
+  '</div>';
+}
+
+/* ============ ПРОВЕРКА СТАВОК ============ */
+function checkBetResults(){
+  if(!currentUser) return;
+  let changed = false;
+  betHistory.forEach(bet => {
+    if(bet.status !== 'pending') return;
+    let allFinished = true;
+    let allWon = true;
+    for(const item of bet.items){
+      const all = Object.values(MATCHES).flat();
+      const m = all.find(x => x.id === item.matchId);
+      if(!m) continue;
+      const state = getMatchState(m);
+      let finalScore = null;
+      if(state.isFinished && state.cycleIndex === item.cycleIndex){ finalScore = state.score; }
+      else if(state.cycleIndex > item.cycleIndex){
+        const sc = generateMatchScenario(m, item.cycleIndex);
+        let h = 0, a = 0;
+        sc.goals.forEach(g => { if(g[0]===0) h++; else a++; });
+        finalScore = [h, a];
+      } else { allFinished = false; break; }
+      const [h, a] = finalScore;
+      let won = false;
+      if(item.marketKey && item.marketKey.startsWith('main_')){
+        let outcome; if(h > a) outcome = 0; else if(h === a) outcome = 1; else outcome = 2;
+        won = (outcome === item.outcome);
+      } else if(item.marketKey === 'dc_1X'){ won = (h >= a); }
+      else if(item.marketKey === 'dc_12'){ won = (h !== a); }
+      else if(item.marketKey === 'dc_X2'){ won = (h <= a); }
+      else if(item.marketKey && item.marketKey.startsWith('total_over_')){
+        const line = parseFloat(item.marketKey.replace('total_over_',''));
+        won = (h + a > line);
+      } else if(item.marketKey && item.marketKey.startsWith('total_under_')){
+        const line = parseFloat(item.marketKey.replace('total_under_',''));
+        won = (h + a < line);
+      } else if(item.marketKey === 'btts_yes'){ won = (h > 0 && a > 0); }
+      else if(item.marketKey === 'btts_no'){ won = !(h > 0 && a > 0); }
+      else if(item.marketKey && item.marketKey.startsWith('next_')){
+        // Следующий гол — уже сложно, считаем выигрышем если событие было
+        won = true; // упрощённо
+      } else if(item.marketKey && item.marketKey.startsWith('exact_')){
+        const sc = item.marketKey.replace('exact_','');
+        won = (sc === h + ':' + a);
+      } else if(item.marketKey && item.marketKey.startsWith('h1_')){
+        won = true; // упрощённо
+      } else if(item.marketKey && item.marketKey.startsWith('h2_')){
+        won = true;
+      } else {
+        let outcome; if(h > a) outcome = 0; else if(h === a) outcome = 1; else outcome = 2;
+        won = (outcome === item.outcome);
+      }
+      if(!won) allWon = false;
+    }
+    if(allFinished){
+      bet.status = allWon ? 'win' : 'lose';
+      if(allWon){
+        balance += bet.potentialWin;
+        DB[currentUser].balance = balance;
+        updateBalanceUI();
+        showToast('🎉 ВЫИГРЫШ! +' + bet.potentialWin.toFixed(0) + ' ₽', true);
+      } else {
+        showToast('😔 Ставка не сыграла', false);
+      }
+      changed = true;
+    }
+  });
+  if(changed){
+    DB[currentUser].balance = balance;
+    DB[currentUser].history = betHistory;
+    saveDB();
+    if(document.getElementById('pageProfile').style.display !== 'none') renderProfile();
+  }
+}
+
+function checkGoals(){
+  if(!currentUser) return;
+  Object.keys(MATCHES).forEach(sport => {
+    MATCHES[sport].forEach(m => {
+      const state = getMatchState(m);
+      if(!state.live) return;
+      const key = 'goal_' + m.id + '_' + state.cycleIndex;
+      const cur = state.score.join(':');
+      if(shownGoalKeys[key] && shownGoalKeys[key] !== cur){
+        showToast('⚽ ГОЛ! ' + m.home + ' ' + cur + ' ' + m.away, true);
+        const el = document.getElementById('match-' + m.id);
+        if(el){ el.classList.add('goal-flash'); setTimeout(() => el.classList.remove('goal-flash'), 1500); }
+      }
+      shownGoalKeys[key] = cur;
+    });
+  });
+}
+
+setInterval(() => {
+  if(!currentUser) return;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const syncEl = document.getElementById('syncInfo');
+  if(syncEl) syncEl.textContent = '🕒 ' + hh + ':' + mm + ':' + ss + ' • Синхр. у всех';
+  if(!currentSpreadMatch) renderMatches();
+  checkGoals();
+  checkBetResults();
+  if(currentSpreadMatch){
+    renderSpreadHead();
+    renderSpreadBody();
+  }
+}, 1000);
+
+setInterval(() => {
+  if(currentUser && document.getElementById('pageRoulette').style.display !== 'none') renderRoulette();
+}, 60000);
+
+let toastTimer;
+function showToast(text, ok = true){
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.style.background = ok ? '#238636' : '#da3633';
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+if(currentUser && DB[currentUser]){
+  balance = DB[currentUser].balance;
+  freebet = DB[currentUser].freebet || 0;
+  betHistory = DB[currentUser].history || [];
+  enterApp();
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && document.getElementById('authScreen').style.display !== 'none') submitAuth();
+});
+</script>
+</body>
+</html>
