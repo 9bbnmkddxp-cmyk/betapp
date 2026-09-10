@@ -585,28 +585,20 @@ function checkLock(match,state){
 }
 function formatTimeLeft(sec){const s=Math.max(0,Math.floor(sec));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
 
-// ============ 🎾 ТЕННИС ============
-const TENNIS_GAME_SEC=5;
-const TENNIS_SET_GAMES=6;
-const TENNIS_TOTAL_SETS=3;
-
+// 🎾 ТЕННИС
+const TENNIS_GAME_SEC=5,TENNIS_SET_GAMES=6,TENNIS_TOTAL_SETS=3;
 function getTennisState(match){
   const nowSec=Math.floor(Date.now()/1000)-EPOCH_OFFSET;
   const offsetCycles=(match.id*7)%5;
   const totalCycle=TENNIS_GAME_SEC*TENNIS_SET_GAMES*TENNIS_TOTAL_SETS+30;
   const shiftedSec=nowSec+Math.floor(totalCycle*offsetCycles/5);
-  const cycleIndex=Math.floor(shiftedSec/totalCycle);
-  const pos=shiftedSec%totalCycle;
-  const seed=match.id*999991+cycleIndex*17;
-  const r=(o)=>seededRandom(seed+o);
-  const winnerIdx=r(1)>0.5?0:1;
-  const setsForLoser=r(2)>0.5?1:0;
-  const setScores=[];
-  const totalSets=2+setsForLoser;
+  const cycleIndex=Math.floor(shiftedSec/totalCycle);const pos=shiftedSec%totalCycle;
+  const seed=match.id*999991+cycleIndex*17;const r=(o)=>seededRandom(seed+o);
+  const winnerIdx=r(1)>0.5?0:1;const setsForLoser=r(2)>0.5?1:0;
+  const setScores=[];const totalSets=2+setsForLoser;
   const loserTakesSet=setsForLoser>0?Math.floor(r(3)*totalSets):-1;
   for(let i=0;i<totalSets;i++){
-    const r2=(o)=>seededRandom(seed+100+i*13+o);
-    let wG,lG;
+    const r2=(o)=>seededRandom(seed+100+i*13+o);let wG,lG;
     if(setsForLoser>0&&i===loserTakesSet&&i<totalSets-1){wG=4+Math.floor(r2(1)*2);lG=6;}
     else{wG=6;lG=Math.floor(r2(2)*5);}
     if(winnerIdx===0)setScores.push({g1:wG,g2:lG});else setScores.push({g1:lG,g2:wG});
@@ -618,11 +610,11 @@ function getTennisState(match){
   const totalDuration=setDurations.reduce((a,b)=>a+b,0);
   if(pos>=totalDuration){
     return{sport:'tennis',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
-      setsScore:[sets1,sets2],currentSet:totalSets-1,setScores:setScores,
+      setsScore:[sets1,sets2],currentSet:totalSets-1,setScores,
       gamesInSet:[setScores[totalSets-1].g1,setScores[totalSets-1].g2],
       points:['—','—'],timeStr:'Завершён',minute:100,score:[sets1,sets2],
-      totalGames:totalGamesFull,totalGamesFull:totalGamesFull,
-      scenario:{setScores,sets1,sets2,totalGames:totalGamesFull},cycleIndex:cycleIndex,isBreak:false};
+      totalGames:totalGamesFull,totalGamesFull,
+      scenario:{setScores,sets1,sets2,totalGames:totalGamesFull},cycleIndex,isBreak:false};
   }
   let currentSet=0,accTime=0;
   for(let i=0;i<setDurations.length;i++){if(pos<accTime+setDurations[i]){currentSet=i;break;}accTime+=setDurations[i];}
@@ -631,15 +623,12 @@ function getTennisState(match){
   const currentGame=Math.floor(setElapsed/TENNIS_GAME_SEC);
   const timeInGame=setElapsed%TENNIS_GAME_SEC;
   const totalGamesInSet=currentSetData.g1+currentSetData.g2;
-  const gamesOrder=[];
-  let tmpG1=0,tmpG2=0;
+  const gamesOrder=[];let tmpG1=0,tmpG2=0;
   for(let i=0;i<totalGamesInSet;i++){
     const r3=(o)=>seededRandom(seed+200+currentSet*31+i*7+o);
     let winnerOfThisGame;
     const rem1=currentSetData.g1-tmpG1;const rem2=currentSetData.g2-tmpG2;
-    if(rem1===0)winnerOfThisGame=1;
-    else if(rem2===0)winnerOfThisGame=0;
-    else winnerOfThisGame=r3(1)>0.5?0:1;
+    if(rem1===0)winnerOfThisGame=1;else if(rem2===0)winnerOfThisGame=0;else winnerOfThisGame=r3(1)>0.5?0:1;
     if(winnerOfThisGame===0)tmpG1++;else tmpG2++;
     gamesOrder.push(winnerOfThisGame);
   }
@@ -648,31 +637,20 @@ function getTennisState(match){
   const pointsProgress=timeInGame/TENNIS_GAME_SEC;
   let p1Points='0',p2Points='0';
   const gameWinner=gamesOrder[currentGame]!==undefined?gamesOrder[currentGame]:0;
-  const gameScoreStep=Math.floor(pointsProgress*5);
-  if(gameWinner===0){
-    if(gameScoreStep===1){p1Points='15';p2Points='0';}
-    else if(gameScoreStep===2){p1Points='30';p2Points='0';}
-    else if(gameScoreStep===3){p1Points='40';p2Points='0';}
-    else if(gameScoreStep===4){p1Points='AD';p2Points='0';}
-  } else {
-    if(gameScoreStep===1){p1Points='0';p2Points='15';}
-    else if(gameScoreStep===2){p1Points='0';p2Points='30';}
-    else if(gameScoreStep===3){p1Points='0';p2Points='40';}
-    else if(gameScoreStep===4){p1Points='0';p2Points='AD';}
-  }
-  let currentSets1=0,currentSets2=0;
-  for(let i=0;i<currentSet;i++){if(setScores[i].g1>setScores[i].g2)currentSets1++;else currentSets2++;}
+  const step=Math.floor(pointsProgress*5);
+  if(gameWinner===0){if(step===1){p1Points='15';}else if(step===2){p1Points='30';}else if(step===3){p1Points='40';}else if(step===4){p1Points='AD';}}
+  else{if(step===1){p2Points='15';}else if(step===2){p2Points='30';}else if(step===3){p2Points='40';}else if(step===4){p2Points='AD';}}
+  let cs1=0,cs2=0;
+  for(let i=0;i<currentSet;i++){if(setScores[i].g1>setScores[i].g2)cs1++;else cs2++;}
   const totalGamesPlayed=setScores.slice(0,currentSet).reduce((a,s)=>a+s.g1+s.g2,0)+games1+games2;
   return{sport:'tennis',phase:'live',live:true,isBreak:false,
-    setsScore:[currentSets1,currentSets2],currentSet:currentSet,setScores:setScores,
+    setsScore:[cs1,cs2],currentSet,setScores,
     gamesInSet:[games1,games2],points:[p1Points,p2Points],
     timeStr:'Сет '+(currentSet+1)+' • '+games1+':'+games2,
-    minute:currentSet*100+games1+games2,score:[currentSets1,currentSets2],
-    totalGames:totalGamesPlayed,totalGamesFull:totalGamesFull,
-    scenario:{setScores,sets1:currentSets1,sets2:currentSets2,totalGames:totalGamesFull},
-    cycleIndex:cycleIndex};
+    minute:currentSet*100+games1+games2,score:[cs1,cs2],
+    totalGames:totalGamesPlayed,totalGamesFull,
+    scenario:{setScores,sets1:cs1,sets2:cs2,totalGames:totalGamesFull},cycleIndex};
 }
-
 function getTennisOdds(match,state){
   if(state.isFinished){const[s1,s2]=state.setsScore;if(s1>s2)return[1.01,0,99.00];return[99.00,0,1.01];}
   if(!state.live)return match.baseOdds.map(o=>o);
@@ -694,105 +672,92 @@ function getTennisTotalGamesOdds(state,line){
   const gamesLeftInSet=Math.max(1,12-gamesInSet);
   const expectedMore=gamesLeftInSet+(setsLeft*10);
   const needed=Math.ceil(line)-state.totalGames;
-  let lambda=expectedMore*0.85;let cumul=Math.exp(-lambda),p=cumul;
-  for(let k=1;k<needed;k++){p=p*lambda/k;cumul+=p;}
-  let pOver=1-cumul;pOver=Math.max(0.20,Math.min(0.85,pOver));
-  let over=Math.round((1/pOver)*100)/100;let under=Math.round((1/(1-pOver))*100)/100;
-  if(over<1.15)over=1.15;if(under<1.15)under=1.15;if(over>6)over=6;if(under>6)under=6;return[over,under];
+  let op;
+  if(needed<=1)op=0.85;else if(needed===2)op=0.65;else if(needed===3)op=0.45;
+  else if(needed===4)op=0.30;else if(needed===5)op=0.20;else if(needed===6)op=0.12;
+  else if(needed===7)op=0.07;else op=0.03;
+  if(setsPlayed>=2)op=Math.min(op,0.15);
+  op=Math.max(0.02,Math.min(0.92,op));
+  let over=Math.round((1/op)*100)/100;let under=Math.round((1/(1-op))*100)/100;
+  if(over<1.05)over=1.05;if(under<1.05)under=1.05;if(over>40)over=40;if(under>40)under=40;
+  return[over,under];
 }
 function getTennisHandicapOdds(state,handicap){
   const[s1,s2]=state.setsScore;
   if(state.isFinished){const diff=s1-s2;if(handicap<0)return(diff+handicap>0)?1.01:99.00;return(-diff-handicap>0)?1.01:99.00;}
-  const diff=s1-s2;const progress=(s1+s2)/2;
-  let pFavor1=0.5;
-  if(diff>0)pFavor1=0.65+progress*0.20;if(diff<0)pFavor1=0.35-progress*0.20;
-  if(handicap<0)pFavor1-=0.15;else pFavor1+=0.15;
-  pFavor1=Math.max(0.10,Math.min(0.90,pFavor1));
-  let o=Math.round((1/pFavor1)*100)/100;if(o<1.15)o=1.15;if(o>8)o=8;return o;
+  const diff=s1-s2;let p1=0.5;if(diff>0)p1=0.65;if(diff<0)p1=0.35;
+  if(handicap<0)p1-=0.15;else p1+=0.15;
+  p1=Math.max(0.10,Math.min(0.90,p1));
+  let o=Math.round((1/p1)*100)/100;if(o<1.15)o=1.15;if(o>8)o=8;return o;
 }
 function getTennisExactSetsOdds(state){
   const outcomes=['2:0','2:1','1:2','0:2'];const[s1,s2]=state.setsScore;const isFinished=state.isFinished;
   return outcomes.map(sc=>{
     const[a,b]=sc.split(':').map(Number);let prob;
     if(isFinished){prob=(a===s1&&b===s2)?0.99:0.01;}
-    else if(a<s1||b<s2){prob=0.01;}
-    else{const need1=a-s1;const need2=b-s2;
-      if(need1>2||need2>2)prob=0.02;
-      else if(need1===2&&need2===0)prob=0.30;
-      else if(need1===0&&need2===2)prob=0.10;
-      else if(need1===1&&need2===1)prob=0.35;
-      else if(need1===2&&need2===1)prob=0.15;
-      else if(need1===1&&need2===2)prob=0.10;
-      else prob=0.05;
-    }
+    else if(a<s1||b<s2)prob=0.01;
+    else{const n1=a-s1;const n2=b-s2;
+      if(n1>2||n2>2)prob=0.02;else if(n1===2&&n2===0)prob=0.30;else if(n1===0&&n2===2)prob=0.10;
+      else if(n1===1&&n2===1)prob=0.35;else if(n1===2&&n2===1)prob=0.15;
+      else if(n1===1&&n2===2)prob=0.10;else prob=0.05;}
     prob=Math.max(0.01,Math.min(0.95,prob));
     return{score:sc,odds:Math.max(1.05,Math.min(99,Math.round((1/prob)*100)/100))};
   });
 }
 
-// ============ 🏀 БАСКЕТБОЛ ============
-const BASKET_QUARTER_SEC=30;
-const BASKET_QUARTERS=4;
-const BASKET_BREAK_SEC=5;
-
+// 🏀 БАСКЕТ
+const BASKET_QUARTER_SEC=30,BASKET_QUARTERS=4,BASKET_BREAK_SEC=5;
 function getBasketState(match){
   const nowSec=Math.floor(Date.now()/1000)-EPOCH_OFFSET;
   const offsetCycles=(match.id*7)%5;
-  const quarterTotal=BASKET_QUARTER_SEC*BASKET_QUARTERS+BASKET_BREAK_SEC*3;
-  const afterBreak=30;const totalCycle=quarterTotal+afterBreak;
+  const qt=BASKET_QUARTER_SEC*BASKET_QUARTERS+BASKET_BREAK_SEC*3;
+  const totalCycle=qt+30;
   const shiftedSec=nowSec+Math.floor(totalCycle*offsetCycles/5);
-  const cycleIndex=Math.floor(shiftedSec/totalCycle);
-  const pos=shiftedSec%totalCycle;
-  const seed=match.id*888881+cycleIndex*19;
-  const r=(o)=>seededRandom(seed+o);
-  const finalScore1=88+Math.floor(r(1)*40);const finalScore2=88+Math.floor(r(2)*40);
-  const q1s=[];let remaining1=finalScore1,remaining2=finalScore2;
+  const cycleIndex=Math.floor(shiftedSec/totalCycle);const pos=shiftedSec%totalCycle;
+  const seed=match.id*888881+cycleIndex*19;const r=(o)=>seededRandom(seed+o);
+  const fs1=88+Math.floor(r(1)*40);const fs2=88+Math.floor(r(2)*40);
+  const q1s=[];let rem1=fs1,rem2=fs2;
   for(let q=0;q<BASKET_QUARTERS;q++){
-    const r2=(o)=>seededRandom(seed+100+q*13+o);
-    let q1,q2;
-    if(q===BASKET_QUARTERS-1){q1=remaining1;q2=remaining2;}
-    else{const share=0.20+Math.floor(r2(1)*10)/100;q1=Math.floor(remaining1*share);q2=Math.floor(remaining2*share);
+    const r2=(o)=>seededRandom(seed+100+q*13+o);let q1,q2;
+    if(q===BASKET_QUARTERS-1){q1=rem1;q2=rem2;}
+    else{const share=0.20+Math.floor(r2(1)*10)/100;q1=Math.floor(rem1*share);q2=Math.floor(rem2*share);
       if(q1<15)q1=15+Math.floor(r2(2)*8);if(q2<15)q2=15+Math.floor(r2(3)*8);
-      remaining1-=q1;remaining2-=q2;}
+      rem1-=q1;rem2-=q2;}
     q1s.push({g1:q1,g2:q2});
   }
-  const totalDuration=BASKET_QUARTER_SEC*BASKET_QUARTERS+BASKET_BREAK_SEC*3;
-  if(pos>=totalDuration){
-    return{sport:'basket',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
-      quarters:q1s,currentQuarter:BASKET_QUARTERS-1,score:[finalScore1,finalScore2],
-      timeStr:'Завершён',minute:48,cycleIndex:cycleIndex,isBreak:false,quarterScores:q1s};
-  }
-  let currentQuarter=0,accTime=0;
+  const td=BASKET_QUARTER_SEC*BASKET_QUARTERS+BASKET_BREAK_SEC*3;
+  if(pos>=td)return{sport:'basket',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
+    quarters:q1s,currentQuarter:BASKET_QUARTERS-1,score:[fs1,fs2],timeStr:'Завершён',minute:48,cycleIndex,isBreak:false,quarterScores:q1s};
+  let cq=0,accTime=0;
   for(let q=0;q<BASKET_QUARTERS;q++){
-    if(pos<accTime+BASKET_QUARTER_SEC){currentQuarter=q;break;}
+    if(pos<accTime+BASKET_QUARTER_SEC){cq=q;break;}
     accTime+=BASKET_QUARTER_SEC;
     if(q<BASKET_QUARTERS-1){
       if(pos<accTime+BASKET_BREAK_SEC){
         let s1=0,s2=0;for(let i=0;i<=q;i++){s1+=q1s[i].g1;s2+=q1s[i].g2;}
-        return{sport:'basket',phase:'break',live:false,isBreak:true,
-          breakLeft:BASKET_BREAK_SEC-(pos-accTime),quarters:q1s,currentQuarter:q,
-          score:[s1,s2],timeStr:'Перерыв Q'+(q+2),minute:12*(q+1),cycleIndex:cycleIndex,quarterScores:q1s};
+        return{sport:'basket',phase:'break',live:false,isBreak:true,breakLeft:BASKET_BREAK_SEC-(pos-accTime),
+          quarters:q1s,currentQuarter:q,score:[s1,s2],timeStr:'Перерыв Q'+(q+2),minute:12*(q+1),cycleIndex,quarterScores:q1s};
       }
       accTime+=BASKET_BREAK_SEC;
     }
   }
-  const qData=q1s[currentQuarter];const qElapsed=pos-accTime;const qProgress=qElapsed/BASKET_QUARTER_SEC;
-  const currentQ1=Math.floor(qData.g1*qProgress);const currentQ2=Math.floor(qData.g2*qProgress);
-  let total1=0,total2=0;for(let i=0;i<currentQuarter;i++){total1+=q1s[i].g1;total2+=q1s[i].g2;}
-  total1+=currentQ1;total2+=currentQ2;
-  const minInQ=Math.floor(qProgress*12);
+  const qD=q1s[cq];const qEl=pos-accTime;const qP=qEl/BASKET_QUARTER_SEC;
+  const cQ1=Math.floor(qD.g1*qP);const cQ2=Math.floor(qD.g2*qP);
+  let t1=0,t2=0;for(let i=0;i<cq;i++){t1+=q1s[i].g1;t2+=q1s[i].g2;}
+  t1+=cQ1;t2+=cQ2;
+  const minInQ=Math.floor(qP*12);
   return{sport:'basket',phase:'live',live:true,isBreak:false,
-    quarters:q1s,currentQuarter:currentQuarter,quarterScores:q1s,
-    score:[total1,total2],currentQScore:[currentQ1,currentQ2],
-    timeStr:'Q'+(currentQuarter+1)+' • '+minInQ+"'",minute:12*currentQuarter+minInQ,cycleIndex:cycleIndex};
+    quarters:q1s,currentQuarter:cq,quarterScores:q1s,
+    score:[t1,t2],currentQScore:[cQ1,cQ2],
+    timeStr:'Q'+(cq+1)+' • '+minInQ+"'",minute:12*cq+minInQ,cycleIndex};
 }
 function getBasketOdds(match,state){
   if(state.isFinished){const[s1,s2]=state.score;if(s1>s2)return[1.01,0,99.00];return[99.00,0,1.01];}
   if(!state.live)return match.baseOdds.map(o=>o);
   const[s1,s2]=state.score;const diff=s1-s2;
-  const quartersLeft=Math.max(0,BASKET_QUARTERS-state.currentQuarter-1);
+  const ql=Math.max(0,BASKET_QUARTERS-state.currentQuarter-1);
   let p1=0.5;if(diff>0)p1=0.5+Math.min(0.4,diff/50);if(diff<0)p1=0.5-Math.min(0.4,-diff/50);
-  if(quartersLeft===0)p1=diff>0?0.97:(diff<0?0.03:0.5);
+  if(ql===0)p1=diff>0?0.97:(diff<0?0.03:0.5);
   p1=Math.max(0.03,Math.min(0.97,p1));const p2=1-p1;
   let o1=Math.round((1/p1)*100)/100;let o2=Math.round((1/p2)*100)/100;
   if(o1<1.01)o1=1.01;if(o2<1.01)o2=1.01;if(o1>30)o1=30;if(o2>30)o2=30;return[o1,0,o2];
@@ -801,134 +766,99 @@ function getBasketTotalOdds(state,line){
   const total=state.score[0]+state.score[1];
   if(state.isFinished){if(total>line)return[1.01,99.00];if(total===line)return[1.01,1.01];return[99.00,1.01];}
   if(total>line)return[1.01,99.00];if(total===line)return[1.01,1.01];
-  const quartersLeft=Math.max(0,BASKET_QUARTERS-state.currentQuarter-1);
-  const expectedMore=quartersLeft*25+8;const needed=Math.ceil(line)-total;
-  let lambda=expectedMore;let cumul=Math.exp(-lambda),p=cumul;
-  for(let k=1;k<needed;k++){p=p*lambda/k;cumul+=p;}
-  let pOver=1-cumul;pOver=Math.max(0.15,Math.min(0.85,pOver));
-  let over=Math.round((1/pOver)*100)/100;let under=Math.round((1/(1-pOver))*100)/100;
+  const ql=Math.max(0,BASKET_QUARTERS-state.currentQuarter-1);
+  const em=ql*25+8;const needed=Math.ceil(line)-total;
+  let cumul=Math.exp(-em),p=cumul;for(let k=1;k<needed;k++){p=p*em/k;cumul+=p;}
+  let pO=1-cumul;pO=Math.max(0.15,Math.min(0.85,pO));
+  let over=Math.round((1/pO)*100)/100;let under=Math.round((1/(1-pO))*100)/100;
   if(over<1.15)over=1.15;if(under<1.15)under=1.15;if(over>6)over=6;if(under>6)under=6;return[over,under];
 }
 function getBasketHandicapOdds(state,handicap){
   const[s1,s2]=state.score;
-  if(state.isFinished){if(handicap<0){return((s1-s2)+handicap>0)?1.01:99.00;}return(-(s1-s2)-handicap>0)?1.01:99.00;}
-  const diff=s1-s2;
-  let p1=0.5;
-  if(handicap<0)p1=0.5-Math.min(0.35,Math.abs(handicap)/20);
-  else p1=0.5+Math.min(0.35,Math.abs(handicap)/20);
-  p1+=Math.min(0.4,diff/50);
-  p1=Math.max(0.05,Math.min(0.95,p1));
+  if(state.isFinished){if(handicap<0)return((s1-s2)+handicap>0)?1.01:99.00;return(-(s1-s2)-handicap>0)?1.01:99.00;}
+  const diff=s1-s2;let p1=0.5;
+  if(handicap<0)p1=0.5-Math.min(0.35,Math.abs(handicap)/20);else p1=0.5+Math.min(0.35,Math.abs(handicap)/20);
+  p1+=Math.min(0.4,diff/50);p1=Math.max(0.05,Math.min(0.95,p1));
   let o=Math.round((1/p1)*100)/100;if(o<1.10)o=1.10;if(o>15)o=15;return o;
 }
-function getBasketQuarterOdds(state,quarterIdx){
-  const q=state.quarterScores[quarterIdx];if(!q)return[1.90,1.90];
-  const isPast=quarterIdx<state.currentQuarter;const isCurrent=quarterIdx===state.currentQuarter;
-  if(isPast){if(q.g1>q.g2)return[1.01,99.00];return[99.00,1.01];}
-  if(isCurrent){
-    const[c1,c2]=state.currentQScore;const diff=c1-c2;
+function getBasketQuarterOdds(state,qidx){
+  const q=state.quarterScores[qidx];if(!q)return[1.90,1.90];
+  if(qidx<state.currentQuarter){if(q.g1>q.g2)return[1.01,99.00];return[99.00,1.01];}
+  if(qidx===state.currentQuarter){const[c1,c2]=state.currentQScore;const diff=c1-c2;
     let p1=0.5+Math.min(0.4,diff/15);p1=Math.max(0.05,Math.min(0.95,p1));
     let o1=Math.round((1/p1)*100)/100;let o2=Math.round((1/(1-p1))*100)/100;
-    return[Math.max(1.10,Math.min(15,o1)),Math.max(1.10,Math.min(15,o2))];
-  }
+    return[Math.max(1.10,Math.min(15,o1)),Math.max(1.10,Math.min(15,o2))];}
   return[1.90,1.90];
 }
 
-// ============ 🎮 КИБЕРСПОРТ ============
+// 🎮 КИБЕР
 const CS_ROUND_SEC=3;
-
 function getEsportState(match){
   const nowSec=Math.floor(Date.now()/1000)-EPOCH_OFFSET;
   const offsetCycles=(match.id*7)%5;
   const isCS=match.league.includes('CS2');
   const totalCycle=isCS?(CS_ROUND_SEC*25*2+60):(60*45+30);
   const shiftedSec=nowSec+Math.floor(totalCycle*offsetCycles/5);
-  const cycleIndex=Math.floor(shiftedSec/totalCycle);
-  const pos=shiftedSec%totalCycle;
-  const seed=match.id*777661+cycleIndex*23;
-  const r=(o)=>seededRandom(seed+o);
+  const cycleIndex=Math.floor(shiftedSec/totalCycle);const pos=shiftedSec%totalCycle;
+  const seed=match.id*777661+cycleIndex*23;const r=(o)=>seededRandom(seed+o);
   if(isCS){
-    const seriesWinner=r(1)>0.5?0:1;const seriesLoserMaps=r(2)>0.5?0:1;
-    const mapResults=[];const totalMaps=2+seriesLoserMaps;
-    const loserMapIdx=seriesLoserMaps>0?Math.floor(r(3)*totalMaps):-1;
-    for(let m=0;m<totalMaps;m++){
-      const r2=(o)=>seededRandom(seed+100+m*13+o);let winnerRounds,loserRounds;
-      if(seriesLoserMaps>0&&m===loserMapIdx&&m<totalMaps-1){winnerRounds=8+Math.floor(r2(1)*5);loserRounds=13;}
-      else{winnerRounds=13;loserRounds=Math.floor(r2(2)*11);}
-      if(seriesWinner===0)mapResults.push({r1:winnerRounds,r2:loserRounds});
-      else mapResults.push({r1:loserRounds,r2:winnerRounds});
+    const sw=r(1)>0.5?0:1;const slm=r(2)>0.5?0:1;
+    const mrs=[];const tm=2+slm;
+    const lmi=slm>0?Math.floor(r(3)*tm):-1;
+    for(let m=0;m<tm;m++){
+      const r2=(o)=>seededRandom(seed+100+m*13+o);let wr,lr;
+      if(slm>0&&m===lmi&&m<tm-1){wr=8+Math.floor(r2(1)*5);lr=13;}
+      else{wr=13;lr=Math.floor(r2(2)*11);}
+      if(sw===0)mrs.push({r1:wr,r2:lr});else mrs.push({r1:lr,r2:wr});
     }
-    let maps1=0,maps2=0;
-    for(const m of mapResults){if(m.r1>m.r2)maps1++;else maps2++;}
-    const totalRoundsFull=mapResults.reduce((a,m)=>a+m.r1+m.r2,0);
-    const mapDurations=mapResults.map(m=>CS_ROUND_SEC*(m.r1+m.r2));
-    const totalDur=mapDurations.reduce((a,b)=>a+b,0);
-    if(pos>=totalDur){
-      return{sport:'esport',game:'cs2',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
-        mapsScore:[maps1,maps2],currentMap:totalMaps-1,mapResults:mapResults,
-        roundsInMap:[mapResults[totalMaps-1].r1,mapResults[totalMaps-1].r2],
-        timeStr:'Завершён',minute:100,score:[maps1,maps2],
-        totalRounds:totalRoundsFull,totalRoundsFull:totalRoundsFull,
-        scenario:{mapResults,maps1,maps2},cycleIndex:cycleIndex,isBreak:false};
+    let m1=0,m2=0;for(const m of mrs){if(m.r1>m.r2)m1++;else m2++;}
+    const trf=mrs.reduce((a,m)=>a+m.r1+m.r2,0);
+    const mds=mrs.map(m=>CS_ROUND_SEC*(m.r1+m.r2));
+    const tDur=mds.reduce((a,b)=>a+b,0);
+    if(pos>=tDur)return{sport:'esport',game:'cs2',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
+      mapsScore:[m1,m2],currentMap:tm-1,mapResults:mrs,roundsInMap:[mrs[tm-1].r1,mrs[tm-1].r2],
+      timeStr:'Завершён',minute:100,score:[m1,m2],totalRounds:trf,totalRoundsFull:trf,
+      scenario:{mapResults:mrs,maps1:m1,maps2:m2},cycleIndex,isBreak:false};
+    let cm=0,accTime=0;
+    for(let i=0;i<mds.length;i++){if(pos<accTime+mds[i]){cm=i;break;}accTime+=mds[i];}
+    const mD=mrs[cm];const mEl=pos-accTime;const cr=Math.floor(mEl/CS_ROUND_SEC);
+    const trInM=mD.r1+mD.r2;const ro=[];let tR1=0,tR2=0;
+    for(let i=0;i<trInM;i++){
+      const r3=(o)=>seededRandom(seed+200+cm*31+i*7+o);
+      let wor;const rem1=mD.r1-tR1;const rem2=mD.r2-tR2;
+      if(rem1===0)wor=1;else if(rem2===0)wor=0;else wor=r3(1)>0.5?0:1;
+      if(wor===0)tR1++;else tR2++;ro.push(wor);
     }
-    let currentMap=0,accTime=0;
-    for(let i=0;i<mapDurations.length;i++){if(pos<accTime+mapDurations[i]){currentMap=i;break;}accTime+=mapDurations[i];}
-    const mapData=mapResults[currentMap];const mapElapsed=pos-accTime;
-    const currentRound=Math.floor(mapElapsed/CS_ROUND_SEC);
-    const totalRoundsInMap=mapData.r1+mapData.r2;
-    const roundsOrder=[];
-    let tmpR1=0,tmpR2=0;
-    for(let i=0;i<totalRoundsInMap;i++){
-      const r3=(o)=>seededRandom(seed+200+currentMap*31+i*7+o);
-      let winnerOfRound;
-      const rem1=mapData.r1-tmpR1;const rem2=mapData.r2-tmpR2;
-      if(rem1===0)winnerOfRound=1;else if(rem2===0)winnerOfRound=0;else winnerOfRound=r3(1)>0.5?0:1;
-      if(winnerOfRound===0)tmpR1++;else tmpR2++;
-      roundsOrder.push(winnerOfRound);
-    }
-    let rounds1=0,rounds2=0;
-    for(let i=0;i<currentRound&&i<roundsOrder.length;i++){if(roundsOrder[i]===0)rounds1++;else rounds2++;}
-    let currentMaps1=0,currentMaps2=0;
-    for(let i=0;i<currentMap;i++){if(mapResults[i].r1>mapResults[i].r2)currentMaps1++;else currentMaps2++;}
-    const totalRoundsPlayed=mapResults.slice(0,currentMap).reduce((a,m)=>a+m.r1+m.r2,0)+rounds1+rounds2;
-    const isPistolRound=currentRound===0||currentRound===15;
+    let r1=0,r2=0;
+    for(let i=0;i<cr&&i<ro.length;i++){if(ro[i]===0)r1++;else r2++;}
+    let cm1=0,cm2=0;for(let i=0;i<cm;i++){if(mrs[i].r1>mrs[i].r2)cm1++;else cm2++;}
+    const trp=mrs.slice(0,cm).reduce((a,m)=>a+m.r1+m.r2,0)+r1+r2;
+    const isP=cr===0||cr===15;
     return{sport:'esport',game:'cs2',phase:'live',live:true,isBreak:false,
-      mapsScore:[currentMaps1,currentMaps2],currentMap:currentMap,mapResults:mapResults,
-      roundsInMap:[rounds1,rounds2],roundsOrder:roundsOrder,currentRound:currentRound,
-      timeStr:'Карта '+(currentMap+1)+' • Раунд '+(currentRound+1)+' • '+rounds1+':'+rounds2,
-      minute:currentMap*30+currentRound,score:[currentMaps1,currentMaps2],
-      totalRounds:totalRoundsPlayed,totalRoundsFull:totalRoundsFull,
-      isPistolRound:isPistolRound,
-      scenario:{mapResults,maps1:currentMaps1,maps2:currentMaps2},cycleIndex:cycleIndex};
+      mapsScore:[cm1,cm2],currentMap:cm,mapResults:mrs,roundsInMap:[r1,r2],roundsOrder:ro,currentRound:cr,
+      timeStr:'Карта '+(cm+1)+' • Раунд '+(cr+1)+' • '+r1+':'+r2,
+      minute:cm*30+cr,score:[cm1,cm2],totalRounds:trp,totalRoundsFull:trf,isPistolRound:isP,
+      scenario:{mapResults:mrs,maps1:cm1,maps2:cm2},cycleIndex};
   } else {
-    const winnerSide=r(1)>0.5?0:1;
-    const duration=Math.floor(30+r(2)*20)*60;
-    const killDiff=Math.floor(5+r(3)*20);
-    const progress=Math.min(1,pos/duration);
-    if(pos>=duration){
-      return{sport:'esport',game:'dota',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
-        score:winnerSide===0?[1,0]:[0,1],
-        killScore:winnerSide===0?[45+killDiff,45]:[45,45+killDiff],
-        timeStr:'Завершён',minute:100,cycleIndex:cycleIndex,isBreak:false,scenario:{winner:winnerSide}};
-    }
-    const gameMin=Math.floor(progress*45);const baseKills=Math.floor(progress*40);
-    let kills1=baseKills+(winnerSide===0?Math.floor(killDiff*progress):0);
-    let kills2=baseKills+(winnerSide===1?Math.floor(killDiff*progress):0);
+    const ws=r(1)>0.5?0:1;const dur=Math.floor(30+r(2)*20)*60;const kd=Math.floor(5+r(3)*20);
+    const prog=Math.min(1,pos/dur);
+    if(pos>=dur)return{sport:'esport',game:'dota',phase:'after',live:false,isFinished:true,afterLeft:totalCycle-pos,
+      score:ws===0?[1,0]:[0,1],killScore:ws===0?[45+kd,45]:[45,45+kd],
+      timeStr:'Завершён',minute:100,cycleIndex,isBreak:false,scenario:{winner:ws}};
+    const gm=Math.floor(prog*45);const bk=Math.floor(prog*40);
+    let k1=bk+(ws===0?Math.floor(kd*prog):0);let k2=bk+(ws===1?Math.floor(kd*prog):0);
     return{sport:'esport',game:'dota',phase:'live',live:true,isBreak:false,
-      score:[0,0],killScore:[kills1,kills2],
-      timeStr:"Дота • "+gameMin+"' • "+kills1+":"+kills2,
-      minute:gameMin,cycleIndex:cycleIndex,
-      scenario:{winner:winnerSide,progress:progress}};
+      score:[0,0],killScore:[k1,k2],timeStr:"Дота • "+gm+"' • "+k1+":"+k2,
+      minute:gm,cycleIndex,scenario:{winner:ws,progress:prog}};
   }
 }
 function getEsportOdds(match,state){
-  if(state.isFinished){
-    if(state.game==='cs2'){const[m1,m2]=state.mapsScore;if(m1>m2)return[1.01,0,99.00];return[99.00,0,1.01];}
-    else{const[k1,k2]=state.killScore;if(k1>k2)return[1.01,0,99.00];return[99.00,0,1.01];}
-  }
+  if(state.isFinished){if(state.game==='cs2'){const[m1,m2]=state.mapsScore;if(m1>m2)return[1.01,0,99.00];return[99.00,0,1.01];}
+    else{const[k1,k2]=state.killScore;if(k1>k2)return[1.01,0,99.00];return[99.00,0,1.01];}}
   if(!state.live)return match.baseOdds.map(o=>o);
   if(state.game==='cs2'){
     const[m1,m2]=state.mapsScore;const[r1,r2]=state.roundsInMap;
-    const diff=m1-m2;let p1=0.5+diff*0.30;const roundDiff=r1-r2;p1+=roundDiff*0.02;
+    const diff=m1-m2;let p1=0.5+diff*0.30;const rD=r1-r2;p1+=rD*0.02;
     if(m1>=2)p1=0.97;if(m2>=2)p1=0.03;
     p1=Math.max(0.03,Math.min(0.97,p1));const p2=1-p1;
     let o1=Math.round((1/p1)*100)/100;let o2=Math.round((1/p2)*100)/100;
@@ -946,30 +876,24 @@ function getEsportTotalRoundsOdds(state,line){
   if(state.isFinished){if(total>line)return[1.01,99.00];if(total===line)return[1.01,1.01];return[99.00,1.01];}
   if(total>line)return[1.01,99.00];if(total===line)return[1.01,1.01];
   const mapsLeft=Math.max(0,2-state.mapsScore[0]-state.mapsScore[1]);
-  const roundsInCurrentMap=state.roundsInMap[0]+state.roundsInMap[1];
-  const roundsLeftInMap=Math.max(0,25-roundsInCurrentMap);
-  const expectedMore=roundsLeftInMap+mapsLeft*22;const needed=Math.ceil(line)-total;
-  let lambda=expectedMore;let cumul=Math.exp(-lambda),p=cumul;
-  for(let k=1;k<needed;k++){p=p*lambda/k;cumul+=p;}
-  let pOver=1-cumul;pOver=Math.max(0.20,Math.min(0.85,pOver));
-  let over=Math.round((1/pOver)*100)/100;let under=Math.round((1/(1-pOver))*100)/100;
+  const rim=state.roundsInMap[0]+state.roundsInMap[1];
+  const rlim=Math.max(0,25-rim);
+  const em=rlim+mapsLeft*22;const needed=Math.ceil(line)-total;
+  let cumul=Math.exp(-em),p=cumul;for(let k=1;k<needed;k++){p=p*em/k;cumul+=p;}
+  let pO=1-cumul;pO=Math.max(0.20,Math.min(0.85,pO));
+  let over=Math.round((1/pO)*100)/100;let under=Math.round((1/(1-pO))*100)/100;
   if(over<1.15)over=1.15;if(under<1.15)under=1.15;if(over>6)over=6;if(under>6)under=6;return[over,under];
 }
 function getEsportMapsOdds(state){
-  const outcomes=['2:0','2:1','1:2','0:2'];const[m1,m2]=state.mapsScore;const isFinished=state.isFinished;
+  const outcomes=['2:0','2:1','1:2','0:2'];const[m1,m2]=state.mapsScore;const isFin=state.isFinished;
   return outcomes.map(sc=>{
     const[a,b]=sc.split(':').map(Number);let prob;
-    if(isFinished){prob=(a===m1&&b===m2)?0.99:0.01;}
-    else if(a<m1||b<m2){prob=0.01;}
-    else{const need1=a-m1;const need2=b-m2;
-      if(need1>2||need2>2)prob=0.02;
-      else if(need1===2&&need2===0)prob=0.35;
-      else if(need1===0&&need2===2)prob=0.10;
-      else if(need1===1&&need2===1)prob=0.35;
-      else if(need1===2&&need2===1)prob=0.12;
-      else if(need1===1&&need2===2)prob=0.06;
-      else prob=0.05;
-    }
+    if(isFin){prob=(a===m1&&b===m2)?0.99:0.01;}
+    else if(a<m1||b<m2)prob=0.01;
+    else{const n1=a-m1;const n2=b-m2;
+      if(n1>2||n2>2)prob=0.02;else if(n1===2&&n2===0)prob=0.35;else if(n1===0&&n2===2)prob=0.10;
+      else if(n1===1&&n2===1)prob=0.35;else if(n1===2&&n2===1)prob=0.12;
+      else if(n1===1&&n2===2)prob=0.06;else prob=0.05;}
     prob=Math.max(0.01,Math.min(0.95,prob));
     return{score:sc,odds:Math.max(1.05,Math.min(99,Math.round((1/prob)*100)/100))};
   });
@@ -977,9 +901,7 @@ function getEsportMapsOdds(state){
 function getEsportPistolRoundOdds(match,state){
   if(!state.live||state.game!=='cs2')return[1.90,1.90];
   if(!state.isPistolRound)return[1.90,1.90];
-  let p1=0.5;
-  let o1=Math.round((1/p1)*100)/100;let o2=Math.round((1/(1-p1))*100)/100;
-  return[o1,o2];
+  return[1.90,1.90];
 }
 function getSportState(match){
   if(match.league&&match.league.includes('🎾'))return getTennisState(match);
@@ -988,22 +910,15 @@ function getSportState(match){
   return getMatchState(match);
 }
 
-// ============ АВТОРИЗАЦИЯ ============
 function getTodayKey(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
-function getTodayDeposit(){
-  if(!currentUser||!DB[currentUser])return 0;
-  const today=getTodayKey();
-  if(!DB[currentUser].depositDate||DB[currentUser].depositDate!==today){DB[currentUser].depositDate=today;DB[currentUser].depositToday=0;saveDB();}
-  return DB[currentUser].depositToday||0;
-}
-function switchAuth(mode){
-  authMode=mode;
+function getTodayDeposit(){if(!currentUser||!DB[currentUser])return 0;const t=getTodayKey();
+  if(!DB[currentUser].depositDate||DB[currentUser].depositDate!==t){DB[currentUser].depositDate=t;DB[currentUser].depositToday=0;saveDB();}
+  return DB[currentUser].depositToday||0;}
+function switchAuth(mode){authMode=mode;
   document.getElementById('tabLogin').classList.toggle('active',mode==='login');
   document.getElementById('tabReg').classList.toggle('active',mode==='reg');
   document.getElementById('pass2Input').style.display=mode==='reg'?'block':'none';
-  document.getElementById('submitBtn').textContent=mode==='reg'?'Зарегистрироваться':'Войти';
-  hideMsg();
-}
+  document.getElementById('submitBtn').textContent=mode==='reg'?'Зарегистрироваться':'Войти';hideMsg();}
 function showMsg(t,ok){const m=document.getElementById('msg');m.textContent=t;m.className='msg show '+(ok?'ok':'err');}
 function hideMsg(){document.getElementById('msg').className='msg';}
 function submitAuth(){
@@ -1016,90 +931,69 @@ function submitAuth(){
     if(pass!==pass2)return showMsg('Пароли не совпадают',false);
     if(DB[login])return showMsg('Логин занят',false);
     DB[login]={pass,balance:10000,freebet:0,history:[],depositToday:0,depositDate:getTodayKey(),lastSpin:0,createdAt:Date.now()};
-    saveDB();showMsg('✅ Успешно! Теперь войди',true);
-    setTimeout(()=>switchAuth('login'),1200);return;
-  }
+    saveDB();showMsg('✅ Успешно! Теперь войди',true);setTimeout(()=>switchAuth('login'),1200);return;}
   if(!DB[login])return showMsg('Нет такого аккаунта',false);
   if(DB[login].pass!==pass)return showMsg('Неверный пароль',false);
   currentUser=login;balance=DB[login].balance;freebet=DB[login].freebet||0;betHistory=DB[login].history||[];
-  saveCurrent();enterApp();
-}
-function enterApp(){
-  document.getElementById('authScreen').style.display='none';
+  saveCurrent();enterApp();}
+function enterApp(){document.getElementById('authScreen').style.display='none';
   document.getElementById('appScreen').style.display='block';
   document.getElementById('bottomNav').style.display='flex';
-  updateBalanceUI();updateFreebetUI();renderTabs();renderExpressDay();renderMatches();
-  showPage('bets');showToast('Привет, '+currentUser+'! 🎉');
-}
-function logout(){
-  if(!confirm('Выйти?'))return;
+  updateBalanceUI();updateFreebetUI();renderTabs();renderExpressDay();renderMatches();showPage('bets');
+  showToast('Привет, '+currentUser+'! 🎉');}
+function logout(){if(!confirm('Выйти?'))return;
   DB[currentUser].balance=balance;DB[currentUser].freebet=freebet;DB[currentUser].history=betHistory;
-  saveDB();currentUser=null;saveCurrent();location.reload();
-}
+  saveDB();currentUser=null;saveCurrent();location.reload();}
 function updateBalanceUI(){const el=document.getElementById('balance');if(el)el.textContent='💰 '+balance.toLocaleString('ru-RU')+' ₽';}
-function updateFreebetUI(){
-  const b=document.getElementById('freebetBadge'),a=document.getElementById('freebetAmount');
-  if(freebet>0){b.classList.add('show');a.textContent=freebet.toLocaleString('ru-RU')+' ₽';}
-  else b.classList.remove('show');
-  const btn=document.getElementById('useFreebetBtn');
-  if(btn)btn.classList.toggle('show',freebet>0&&bets.length>0);
-}
-function showDeposit(){
-  const today=getTodayDeposit();const left=DAILY_LIMIT-today;
-  if(left<=0)return showToast('❌ Лимит исчерпан',false);
-  const amount=prompt('Сумма пополнения\n\nСегодня: '+today.toLocaleString('ru-RU')+' ₽\nОсталось: '+left.toLocaleString('ru-RU')+' ₽',String(Math.min(1000,left)));
-  if(!amount)return;const num=Number(amount);
-  if(isNaN(num)||num<=0)return showToast('Неверная сумма',false);
-  if(num>left)return showToast('❌ Максимум: '+left.toLocaleString('ru-RU')+' ₽',false);
-  balance+=num;DB[currentUser].balance=balance;DB[currentUser].depositToday=today+num;DB[currentUser].depositDate=getTodayKey();
-  saveDB();updateBalanceUI();showToast('✅ +'+num.toLocaleString('ru-RU')+' ₽');
-}
-function showPage(page){
-  document.getElementById('pageBets').style.display=page==='bets'?'block':'none';
+function updateFreebetUI(){const b=document.getElementById('freebetBadge'),a=document.getElementById('freebetAmount');
+  if(freebet>0){b.classList.add('show');a.textContent=freebet.toLocaleString('ru-RU')+' ₽';}else b.classList.remove('show');
+  const btn=document.getElementById('useFreebetBtn');if(btn)btn.classList.toggle('show',freebet>0&&bets.length>0);}
+function showDeposit(){const t=getTodayDeposit();const l=DAILY_LIMIT-t;if(l<=0)return showToast('❌ Лимит исчерпан',false);
+  const amt=prompt('Сумма пополнения\n\nСегодня: '+t.toLocaleString('ru-RU')+' ₽\nОсталось: '+l.toLocaleString('ru-RU')+' ₽',String(Math.min(1000,l)));
+  if(!amt)return;const n=Number(amt);
+  if(isNaN(n)||n<=0)return showToast('Неверная сумма',false);
+  if(n>l)return showToast('❌ Максимум: '+l.toLocaleString('ru-RU')+' ₽',false);
+  balance+=n;DB[currentUser].balance=balance;DB[currentUser].depositToday=t+n;DB[currentUser].depositDate=getTodayKey();
+  saveDB();updateBalanceUI();showToast('✅ +'+n.toLocaleString('ru-RU')+' ₽');}
+function showPage(page){document.getElementById('pageBets').style.display=page==='bets'?'block':'none';
   document.getElementById('pageRoulette').style.display=page==='roulette'?'block':'none';
   document.getElementById('pageProfile').style.display=page==='profile'?'block':'none';
   document.getElementById('navBets').classList.toggle('active',page==='bets');
   document.getElementById('navRoulette').classList.toggle('active',page==='roulette');
   document.getElementById('navProfile').classList.toggle('active',page==='profile');
-  if(page==='profile')renderProfile();
-  if(page==='roulette')renderRoulette();
-}
+  if(page==='profile')renderProfile();if(page==='roulette')renderRoulette();}
 
-// ============ КЭШАУТ ============
 function calculateCashout(bet){
   if(bet.status!=='pending')return 0;
-  let totalProb=1;
+  let tp=1;
   for(const item of bet.items){
     const m=findMatchById(item.matchId);if(!m)return 0;
     const state=getSportState(m);if(state.isFinished)return 0;
-    let currentOdds;
-    if(m.league&&m.league.includes('🎾'))currentOdds=getTennisOdds(m,state);
-    else if(m.league&&m.league.includes('🏀'))currentOdds=getBasketOdds(m,state);
-    else if(m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota')))currentOdds=getEsportOdds(m,state);
-    else currentOdds=getMatchOdds(m,state);
-    const mk=item.marketKey||'';
-    let pCurrent=1/item.odds;
-    if(mk.includes('_1')||mk.includes('П1'))pCurrent=1/currentOdds[0];
-    else if(mk.includes('_2')||mk.includes('П2'))pCurrent=1/currentOdds[2];
-    totalProb*=pCurrent;
+    let co;
+    if(m.league&&m.league.includes('🎾'))co=getTennisOdds(m,state);
+    else if(m.league&&m.league.includes('🏀'))co=getBasketOdds(m,state);
+    else if(m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota')))co=getEsportOdds(m,state);
+    else co=getMatchOdds(m,state);
+    const mk=item.marketKey||'';let pc=1/item.odds;
+    if(mk.includes('_1')||mk.includes('П1'))pc=1/co[0];
+    else if(mk.includes('_2')||mk.includes('П2'))pc=1/co[2];
+    tp*=pc;
   }
-  const initialProb=1/bet.totalOdds;
-  let cashout=bet.stake*(totalProb/initialProb)*0.9;
+  const ip=1/bet.totalOdds;
+  let cashout=bet.stake*(tp/ip)*0.9;
   if(cashout>bet.potentialWin)cashout=bet.potentialWin*0.95;
   if(cashout<bet.stake*0.05)cashout=bet.stake*0.05;
   return Math.round(cashout);
 }
 function cashoutBet(betId){
   const bet=betHistory.find(b=>b.id===betId);if(!bet||bet.status!=='pending')return;
-  const amount=calculateCashout(bet);
-  if(amount<=0)return showToast('Кэшаут недоступен',false);
-  if(!confirm('Забрать '+amount+' ₽ вместо '+bet.potentialWin.toFixed(0)+' ₽?'))return;
-  bet.status='cashout';bet.cashoutAmount=amount;balance+=amount;
+  const amt=calculateCashout(bet);
+  if(amt<=0)return showToast('Кэшаут недоступен',false);
+  if(!confirm('Забрать '+amt+' ₽ вместо '+bet.potentialWin.toFixed(0)+' ₽?'))return;
+  bet.status='cashout';bet.cashoutAmount=amt;balance+=amt;
   DB[currentUser].balance=balance;DB[currentUser].history=betHistory;saveDB();
-  updateBalanceUI();showToast('💸 Кэшаут: +'+amount+' ₽',true);renderProfile();
+  updateBalanceUI();showToast('💸 Кэшаут: +'+amt+' ₽',true);renderProfile();
 }
-
-// ============ ПРОФИЛЬ ============
 function renderProfile(){
   document.getElementById('pName').textContent=currentUser;
   document.getElementById('pBalance').textContent=balance.toLocaleString('ru-RU')+' ₽';
@@ -1109,115 +1003,81 @@ function renderProfile(){
   const inPlay=betHistory.filter(b=>b.status==='pending').reduce((a,b)=>a+b.stake,0);
   document.getElementById('pInPlay').textContent=inPlay.toLocaleString('ru-RU')+' ₽';
   const left=DAILY_LIMIT-getTodayDeposit();
-  const le=document.getElementById('pLimit');
-  le.textContent=left.toLocaleString('ru-RU')+' ₽';
+  const le=document.getElementById('pLimit');le.textContent=left.toLocaleString('ru-RU')+' ₽';
   le.style.color=left<=0?'var(--red)':(left<500000?'var(--accent)':'var(--green)');
   const hist=document.getElementById('history');
   if(!betHistory.length){hist.innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px">Ставок пока нет</div>';return;}
   hist.innerHTML=betHistory.slice().reverse().map(b=>{
     const st=b.status==='pending'?'⏳ В игре':b.status==='win'?'✅ Выигрыш':b.status==='return'?'🔄 Возврат':b.status==='cashout'?'💸 Кэшаут':'❌ Проигрыш';
-    let cashoutBtn='';
-    if(b.status==='pending'){
-      const co=calculateCashout(b);
-      if(co>0)cashoutBtn='<button class="cashout-btn" onclick="cashoutBet('+b.id+')">💸 Забрать '+co+' ₽ сейчас</button>';
-    }
+    let cb='';
+    if(b.status==='pending'){const co=calculateCashout(b);if(co>0)cb='<button class="cashout-btn" onclick="cashoutBet('+b.id+')">💸 Забрать '+co+' ₽ сейчас</button>';}
     let ci='';if(b.status==='cashout')ci=' (выплачено '+b.cashoutAmount+' ₽)';
-    return '<div class="history-item"><div>'+b.items.map(i=>(i.market||'Исход')+': '+i.home+'—'+i.away).join(', ')+'</div><div style="color:var(--text-dim);font-size:11px;margin-top:4px">Ставка: '+b.stake+' ₽ × '+b.totalOdds.toFixed(2)+'<span class="status '+b.status+'">'+st+'</span>'+ci+'</div>'+cashoutBtn+'</div>';
+    return '<div class="history-item"><div>'+b.items.map(i=>(i.market||'Исход')+': '+i.home+'—'+i.away).join(', ')+'</div><div style="color:var(--text-dim);font-size:11px;margin-top:4px">Ставка: '+b.stake+' ₽ × '+b.totalOdds.toFixed(2)+'<span class="status '+b.status+'">'+st+'</span>'+ci+'</div>'+cb+'</div>';
   }).join('');
 }
-
-// ============ РУЛЕТКА ============
-function renderRoulette(){
-  const lastSpin=DB[currentUser].lastSpin||0;const nextSpin=lastSpin+WEEK_MS;const now=Date.now();
+function renderRoulette(){const ls=DB[currentUser].lastSpin||0;const ns=ls+WEEK_MS;const now=Date.now();
   const btn=document.getElementById('spinBtn');const cd=document.getElementById('cooldown');
-  if(now>=nextSpin){btn.disabled=false;btn.textContent='КРУТИТЬ 🎰';cd.textContent='Доступно!';cd.style.color='var(--green)';}
-  else{btn.disabled=true;btn.textContent='⏳ Недоступно';
-    const left=nextSpin-now;const d=Math.floor(left/(24*60*60*1000));
-    const h=Math.floor((left%(24*60*60*1000))/(60*60*1000));
-    const m=Math.floor((left%(60*60*1000))/(60*1000));
-    cd.textContent='Через '+d+'д '+h+'ч '+m+'м';cd.style.color='var(--text-dim)';}
-}
-function spinWheel(){
-  const lastSpin=DB[currentUser].lastSpin||0;
-  if(Date.now()<lastSpin+WEEK_MS)return showToast('⏳ Ещё рано!',false);
+  if(now>=ns){btn.disabled=false;btn.textContent='КРУТИТЬ 🎰';cd.textContent='Доступно!';cd.style.color='var(--green)';}
+  else{btn.disabled=true;btn.textContent='⏳ Недоступно';const l=ns-now;
+    const d=Math.floor(l/(24*60*60*1000));const h=Math.floor((l%(24*60*60*1000))/(60*60*1000));const m=Math.floor((l%(60*60*1000))/(60*1000));
+    cd.textContent='Через '+d+'д '+h+'ч '+m+'м';cd.style.color='var(--text-dim)';}}
+function spinWheel(){const ls=DB[currentUser].lastSpin||0;if(Date.now()<ls+WEEK_MS)return showToast('⏳ Ещё рано!',false);
   const btn=document.getElementById('spinBtn');btn.disabled=true;btn.textContent='Крутится...';
   const idx=Math.floor(Math.random()*PRIZES.length);const prize=PRIZES[idx];
-  const angle=360*5+(360-idx*60-30);
-  document.getElementById('wheel').style.transform='rotate('+angle+'deg)';
-  setTimeout(()=>{
-    freebet+=prize;DB[currentUser].freebet=freebet;DB[currentUser].lastSpin=Date.now();saveDB();updateFreebetUI();
+  const angle=360*5+(360-idx*60-30);document.getElementById('wheel').style.transform='rotate('+angle+'deg)';
+  setTimeout(()=>{freebet+=prize;DB[currentUser].freebet=freebet;DB[currentUser].lastSpin=Date.now();saveDB();updateFreebetUI();
     document.getElementById('resultAmount').textContent='+'+prize.toLocaleString('ru-RU')+' ₽';
     if(prize===15000){document.getElementById('resultEmoji').textContent='👑';document.getElementById('resultTitle').textContent='ДЖЕКПОТ!';}
     else if(prize>=5000){document.getElementById('resultEmoji').textContent='🔥';document.getElementById('resultTitle').textContent='Крупный приз!';}
     else{document.getElementById('resultEmoji').textContent='🎉';document.getElementById('resultTitle').textContent='Поздравляем!';}
     document.getElementById('resultText').textContent='Фрибет зачислен';
-    document.getElementById('resultModal').classList.add('show');renderRoulette();
-  },5200);
-}
-function closeResult(){
-  document.getElementById('resultModal').classList.remove('show');
+    document.getElementById('resultModal').classList.add('show');renderRoulette();},5200);}
+function closeResult(){document.getElementById('resultModal').classList.remove('show');
   setTimeout(()=>{const w=document.getElementById('wheel');w.style.transition='none';w.style.transform='rotate(0deg)';
-    setTimeout(()=>{w.style.transition='transform 5s cubic-bezier(.17,.67,.15,1)';},50);},300);
-}
+    setTimeout(()=>{w.style.transition='transform 5s cubic-bezier(.17,.67,.15,1)';},50);},300);}
 
-// ============ ЭКСПРЕСС ДНЯ ============
 function getExpressOfDay(){
-  refreshMatches();const dayEpoch=Math.floor(Date.now()/86400000);
-  const allMatches=[];
-  for(const sport in MATCHES_CACHE){MATCHES_CACHE[sport].forEach(m=>allMatches.push({...m,sport}));}
-  if(allMatches.length<3)return null;
+  refreshMatches();const de=Math.floor(Date.now()/86400000);
+  const am=[];for(const sp in MATCHES_CACHE){MATCHES_CACHE[sp].forEach(m=>am.push({...m,sport:sp}));}
+  if(am.length<3)return null;
   const picks=[];const used=new Set();
-  for(let i=0;i<3;i++){
-    let idx,tries=0;
-    do{idx=Math.floor(seededRandom(dayEpoch*100+i*17)*allMatches.length);tries++;}while(used.has(idx)&&tries<50);
-    used.add(idx);const m=allMatches[idx];
-    const outcomes=[0,1,2].filter(o=>m.baseOdds[o]>0);
-    let bestOutcome=outcomes[0];let minOdd=m.baseOdds[bestOutcome];
-    outcomes.forEach(o=>{if(m.baseOdds[o]<minOdd){minOdd=m.baseOdds[o];bestOutcome=o;}});
-    picks.push({match:m,outcome:bestOutcome,odds:minOdd});
-  }
-  const totalOdds=picks.reduce((a,p)=>a*p.odds,1);
-  return{picks,totalOdds};
+  for(let i=0;i<3;i++){let idx,tries=0;
+    do{idx=Math.floor(seededRandom(de*100+i*17)*am.length);tries++;}while(used.has(idx)&&tries<50);
+    used.add(idx);const m=am[idx];
+    const outs=[0,1,2].filter(o=>m.baseOdds[o]>0);
+    let bo=outs[0];let mo=m.baseOdds[bo];
+    outs.forEach(o=>{if(m.baseOdds[o]<mo){mo=m.baseOdds[o];bo=o;}});
+    picks.push({match:m,outcome:bo,odds:mo});}
+  const to=picks.reduce((a,p)=>a*p.odds,1);
+  return{picks,totalOdds:to};
 }
-function renderExpressDay(){
-  const exp=getExpressOfDay();const el=document.getElementById('expressDay');
+function renderExpressDay(){const exp=getExpressOfDay();const el=document.getElementById('expressDay');
   if(!exp){el.innerHTML='';return;}
-  const labels=['1','X','2'];
-  let html='<div class="express-day"><h3>⚡ Экспресс дня</h3>';
-  exp.picks.forEach(p=>{html+='<div class="express-day-item">'+p.match.home+' — '+p.match.away+' <span class="m">'+(labels[p.outcome]||'П1')+' @ '+p.odds.toFixed(2)+'</span></div>';});
+  const lbl=['1','X','2'];let html='<div class="express-day"><h3>⚡ Экспресс дня</h3>';
+  exp.picks.forEach(p=>{html+='<div class="express-day-item">'+p.match.home+' — '+p.match.away+' <span class="m">'+(lbl[p.outcome]||'П1')+' @ '+p.odds.toFixed(2)+'</span></div>';});
   html+='<div class="express-day-total"><span class="label">Общий кэф:</span><span class="value">'+exp.totalOdds.toFixed(2)+'</span></div>';
   html+='<button class="express-day-btn" onclick="addExpressDay()">Поставить 100 ₽ → '+Math.round(100*exp.totalOdds)+' ₽</button></div>';
-  el.innerHTML=html;
-}
-function addExpressDay(){
-  const exp=getExpressOfDay();if(!exp)return;
-  bets=[];
+  el.innerHTML=html;}
+function addExpressDay(){const exp=getExpressOfDay();if(!exp)return;bets=[];
   exp.picks.forEach(p=>{bets.push({matchId:p.match.id,outcome:p.outcome,odds:p.odds,label:['1','X','2'][p.outcome],home:p.match.home,away:p.match.away,market:'Экспресс дня',marketKey:null});});
   renderSlip();document.getElementById('stakeInput').value=100;updatePayout();toggleSlip();
-  showToast('⚡ Экспресс дня добавлен!',true);
-}
+  showToast('⚡ Экспресс дня добавлен!',true);}
 
-// ============ ТАБЫ ============
-function renderTabs(){
-  document.getElementById('tabs').innerHTML=SPORTS.map(s=>'<button class="tab '+(s===selectedSport?'active':'')+'" onclick="selectSport(\''+s+'\')">'+s+'</button>').join('');
-}
+function renderTabs(){document.getElementById('tabs').innerHTML=SPORTS.map(s=>'<button class="tab '+(s===selectedSport?'active':'')+'" onclick="selectSport(\''+s+'\')">'+s+'</button>').join('');}
 function selectSport(s){selectedSport=s;renderTabs();renderMatches();}
-
-// ============ РЕНДЕР МАТЧЕЙ ============
 function renderMatches(){
-  refreshMatches();
-  const list=MATCHES_CACHE[selectedSport]||[];
-  const isTennis=selectedSport==='🎾 Теннис';const isBasket=selectedSport==='🏀 Баскетбол';const isEsport=selectedSport==='🎮 Киберспорт';
+  refreshMatches();const list=MATCHES_CACHE[selectedSport]||[];
+  const isT=selectedSport==='🎾 Теннис';const isB=selectedSport==='🏀 Баскетбол';const isE=selectedSport==='🎮 Киберспорт';
   document.getElementById('matches').innerHTML=list.map(m=>{
     let state,odds,labels,timeDisplay='',banner='';
-    if(isTennis){state=getTennisState(m);odds=getTennisOdds(m,state);labels=['П1','','П2'];
+    if(isT){state=getTennisState(m);odds=getTennisOdds(m,state);labels=['П1','','П2'];
       if(state.live)timeDisplay='<span class="live-dot"></span>'+state.timeStr;
       else if(state.isFinished)timeDisplay='⏱ Новый через '+formatTimeLeft(state.afterLeft);}
-    else if(isBasket){state=getBasketState(m);odds=getBasketOdds(m,state);labels=['П1','','П2'];
+    else if(isB){state=getBasketState(m);odds=getBasketOdds(m,state);labels=['П1','','П2'];
       if(state.live)timeDisplay='<span class="live-dot"></span>'+state.timeStr;
       else if(state.isBreak)timeDisplay='⏸ Перерыв '+formatTimeLeft(state.breakLeft);
       else if(state.isFinished)timeDisplay='⏱ Новый через '+formatTimeLeft(state.afterLeft);}
-    else if(isEsport){state=getEsportState(m);odds=getEsportOdds(m,state);labels=['П1','','П2'];
+    else if(isE){state=getEsportState(m);odds=getEsportOdds(m,state);labels=['П1','','П2'];
       if(state.live)timeDisplay='<span class="live-dot"></span>'+state.timeStr;
       else if(state.isFinished)timeDisplay='⏱ Новый через '+formatTimeLeft(state.afterLeft);}
     else{state=getMatchState(m);odds=getMatchOdds(m,state);labels=['1','X','2'];
@@ -1226,53 +1086,39 @@ function renderMatches(){
       else if(state.isFinished)timeDisplay='⏱ Новый через '+formatTimeLeft(state.afterLeft);}
     if(state.isFinished)banner='<div class="lock-banner restart">✅ Матч завершён. Новый через '+formatTimeLeft(state.afterLeft)+'</div>';
     else if(state.isBreak)banner='<div class="lock-banner break">⏸ Перерыв</div>';
-    else if(!isTennis&&!isBasket&&!isEsport){const lock=checkLock(m,state);if(lock.locked)banner='<div class="lock-banner">'+lock.reason+'</div>';}
-    const myBetClass=myBetMatchIds[m.id]?' mybet':'';
-    let scoreDisplay='';
-    if(isTennis){const[s1,s2]=state.setsScore;scoreDisplay='<span class="score">'+s1+':'+s2+'</span>';
-      if(state.live)scoreDisplay+=' <span style="color:var(--text-dim);font-size:12px;margin-left:6px">('+state.gamesInSet[0]+':'+state.gamesInSet[1]+', '+state.points[0]+'-'+state.points[1]+')</span>';}
-    else if(isBasket){scoreDisplay='<span class="score">'+state.score[0]+':'+state.score[1]+'</span>';}
-    else if(isEsport){const[m1,m2]=state.mapsScore;scoreDisplay='<span class="score">'+m1+':'+m2+'</span>';
-      if(state.game==='cs2'&&state.live)scoreDisplay+=' <span style="color:var(--text-dim);font-size:12px;margin-left:6px">(раунд '+state.currentRound+': '+state.roundsInMap[0]+':'+state.roundsInMap[1]+')</span>';}
+    else if(!isT&&!isB&&!isE){const lock=checkLock(m,state);if(lock.locked)banner='<div class="lock-banner">'+lock.reason+'</div>';}
+    const mbc=myBetMatchIds[m.id]?' mybet':'';
+    let sd='';
+    if(isT){const[s1,s2]=state.setsScore;sd='<span class="score">'+s1+':'+s2+'</span>';
+      if(state.live)sd+=' <span style="color:var(--text-dim);font-size:12px;margin-left:6px">('+state.gamesInSet[0]+':'+state.gamesInSet[1]+', '+state.points[0]+'-'+state.points[1]+')</span>';}
+    else if(isB){sd='<span class="score">'+state.score[0]+':'+state.score[1]+'</span>';}
+    else if(isE){const[mm1,mm2]=state.mapsScore;sd='<span class="score">'+mm1+':'+mm2+'</span>';
+      if(state.game==='cs2'&&state.live)sd+=' <span style="color:var(--text-dim);font-size:12px;margin-left:6px">(раунд '+state.currentRound+': '+state.roundsInMap[0]+':'+state.roundsInMap[1]+')</span>';}
     else{const showScore=state.live||state.isFinished||state.isBreak;
-      scoreDisplay=showScore?'<span class="score">'+state.score[0]+':'+state.score[1]+'</span>':'';}
-    return '<div class="match'+myBetClass+'" id="match-'+m.id+'" onclick="openSpread('+m.id+')">'+
+      sd=showScore?'<span class="score">'+state.score[0]+':'+state.score[1]+'</span>':'';}
+    return '<div class="match'+mbc+'" id="match-'+m.id+'" onclick="openSpread('+m.id+')">'+
       '<div class="match-header"><span class="league">'+m.league+'</span><span class="time">'+timeDisplay+'</span></div>'+
-      '<div class="teams">'+m.home+' — '+m.away+scoreDisplay+'</div>'+banner+
+      '<div class="teams">'+m.home+' — '+m.away+sd+'</div>'+banner+
       '<div class="odds-row">'+
-        odds.map((o,i)=>o===0?'':'<div class="odd '+(isSelected(m.id,null,i)?'selected ':'')+'" onclick="event.stopPropagation();addBet('+m.id+',null,'+i+','+o+')"><div class="odd-label">'+labels[i]+'</div><div class="odd-value">'+o.toFixed(2)+'</div></div>').join('')+
+      odds.map((o,i)=>o===0?'':'<div class="odd '+(isSelected(m.id,null,i)?'selected ':'')+'" onclick="event.stopPropagation();addBet('+m.id+',null,'+i+','+o+')"><div class="odd-label">'+labels[i]+'</div><div class="odd-value">'+o.toFixed(2)+'</div></div>').join('')+
       '</div><div class="match-hint">👆 Тапни — открыть все рынки</div></div>';
   }).join('');
 }
-function isSelected(matchId,marketKey,outcome){
-  if(marketKey)return bets.some(b=>b.matchId===matchId&&b.marketKey===marketKey&&b.outcome===outcome);
-  return bets.some(b=>b.matchId===matchId&&!b.marketKey&&b.outcome===outcome);
-}
-function addBet(matchId,market,outcome,odds,label,marketKey){
-  const m=findMatchById(matchId);if(!m)return;
-  const state=getSportState(m);
-  if(state.isFinished)return showToast('⏸ Матч завершён',false);
-  const key=marketKey||null;
-  const finalLabel=label||['1','X','2'][outcome]||'';
-  const idx=bets.findIndex(b=>b.matchId===matchId&&b.marketKey===key&&b.outcome===outcome);
+function isSelected(mid,mk,o){if(mk)return bets.some(b=>b.matchId===mid&&b.marketKey===mk&&b.outcome===o);return bets.some(b=>b.matchId===mid&&!b.marketKey&&b.outcome===o);}
+function addBet(mid,market,outcome,odds,label,mk){
+  const m=findMatchById(mid);if(!m)return;
+  const state=getSportState(m);if(state.isFinished)return showToast('⏸ Матч завершён',false);
+  const key=mk||null;const fl=label||['1','X','2'][outcome]||'';
+  const idx=bets.findIndex(b=>b.matchId===mid&&b.marketKey===key&&b.outcome===outcome);
   if(idx!==-1)bets.splice(idx,1);
-  else bets.push({matchId,outcome,odds,label:finalLabel,home:m.home,away:m.away,market:market||'Исход',marketKey:key});
-  renderMatches();renderSlip();
-  if(currentSpreadMatch===matchId)renderSpreadBody();
+  else bets.push({matchId:mid,outcome,odds,label:fl,home:m.home,away:m.away,market:market||'Исход',marketKey:key});
+  renderMatches();renderSlip();if(currentSpreadMatch===mid)renderSpreadBody();
 }
 function removeBet(i){bets.splice(i,1);renderMatches();renderSlip();if(currentSpreadMatch)renderSpreadBody();}
-function cleanLockedBets(){
-  if(!bets.length)return;
-  let changed=false;
-  for(let i=bets.length-1;i>=0;i--){
-    const b=bets[i];const m=findMatchById(b.matchId);if(!m)continue;
-    const state=getSportState(m);
-    if(state.isFinished){bets.splice(i,1);changed=true;}
-  }
-  if(changed){renderMatches();renderSlip();}
-}
-
-// ============ КУПОН ============
+function cleanLockedBets(){if(!bets.length)return;let ch=false;
+  for(let i=bets.length-1;i>=0;i--){const b=bets[i];const m=findMatchById(b.matchId);if(!m)continue;
+    const s=getSportState(m);if(s.isFinished){bets.splice(i,1);ch=true;}}
+  if(ch){renderMatches();renderSlip();}}
 function renderSlip(){
   const badge=document.getElementById('badge');
   document.getElementById('badgeCount').textContent=bets.length;
@@ -1284,22 +1130,16 @@ function renderSlip(){
   else document.getElementById('slipExpress').innerHTML='';
   updateFreebetUI();updatePayout();
 }
-function toggleFreebet(){
-  if(freebet<=0)return showToast('Нет фрибетов',false);
-  useFreebet=!useFreebet;
-  const btn=document.getElementById('useFreebetBtn');
+function toggleFreebet(){if(freebet<=0)return showToast('Нет фрибетов',false);
+  useFreebet=!useFreebet;const btn=document.getElementById('useFreebetBtn');
   if(useFreebet){btn.textContent='✅ Фрибет применяется';btn.style.background='var(--green)';btn.style.color='#fff';}
   else{btn.textContent='🎁 Использовать фрибет ('+freebet.toLocaleString('ru-RU')+' ₽)';btn.style.background='var(--accent)';btn.style.color='#000';}
-  updatePayout();
-}
+  updatePayout();}
 function updatePayout(){
   const stake=Number(document.getElementById('stakeInput').value)||0;
-  const totalOdds=bets.reduce((a,b)=>a*b.odds,1);
-  const win=stake*(bets.length?totalOdds:0);
-  let text=win.toFixed(0)+' ₽';
-  if(useFreebet&&freebet>0)text+=' ('+Math.min(stake,freebet)+'₽ фрибет)';
-  document.getElementById('payout').textContent=text;
-}
+  const to=bets.reduce((a,b)=>a*b.odds,1);const w=stake*(bets.length?to:0);
+  let t=w.toFixed(0)+' ₽';if(useFreebet&&freebet>0)t+=' ('+Math.min(stake,freebet)+'₽ фрибет)';
+  document.getElementById('payout').textContent=t;}
 document.getElementById('stakeInput').addEventListener('input',updatePayout);
 function setStake(v){document.getElementById('stakeInput').value=v;updatePayout();}
 function toggleSlip(){document.getElementById('slip').classList.toggle('open');}
@@ -1310,52 +1150,46 @@ function placeBet(){
   let rms=stake,fbu=0;
   if(useFreebet&&freebet>0){fbu=Math.min(stake,freebet);rms=stake-fbu;}
   if(rms>balance)return showToast('Недостаточно средств',false);
-  const totalOdds=bets.reduce((a,b)=>a*b.odds,1);const pw=stake*totalOdds;
+  const to=bets.reduce((a,b)=>a*b.odds,1);const pw=stake*to;
   balance-=rms;freebet-=fbu;
-  const items=bets.map(b=>{const m=findMatchById(b.matchId);const state=getSportState(m);return{...b,cycleIndex:state.cycleIndex};});
-  const record={id:Date.now(),items,stake,freebetUsed:fbu,totalOdds,potentialWin:pw,status:'pending',createdAt:Date.now()};
-  betHistory.push(record);
-  items.forEach(it=>{myBetMatchIds[it.matchId]=true;});
+  const items=bets.map(b=>{const m=findMatchById(b.matchId);const s=getSportState(m);return{...b,cycleIndex:s.cycleIndex};});
+  const record={id:Date.now(),items,stake,freebetUsed:fbu,totalOdds:to,potentialWin:pw,status:'pending',createdAt:Date.now()};
+  betHistory.push(record);items.forEach(it=>{myBetMatchIds[it.matchId]=true;});
   DB[currentUser].balance=balance;DB[currentUser].freebet=freebet;DB[currentUser].history=betHistory;
   saveDB();updateBalanceUI();updateFreebetUI();
-  useFreebet=false;
-  const fb=document.getElementById('useFreebetBtn');fb.textContent='🎁 Использовать фрибет';fb.style.background='var(--accent)';fb.style.color='#000';
+  useFreebet=false;const fb=document.getElementById('useFreebetBtn');
+  fb.textContent='🎁 Использовать фрибет';fb.style.background='var(--accent)';fb.style.color='#000';
   let msg='✅ Ставка '+stake+' ₽';if(fbu>0)msg+=' (фрибет '+fbu+' ₽)';
   showToast(msg+' | Потенциал: '+pw.toFixed(0)+' ₽');
-  bets=[];renderMatches();renderSlip();toggleSlip();
-}
+  bets=[];renderMatches();renderSlip();toggleSlip();}
 
-// ============ РОСПИСЬ ============
-function openSpread(matchId){
-  const m=findMatchById(matchId);if(!m)return;
-  currentSpreadMatch=matchId;currentSpreadTab='match';currentSpreadStat=false;
+function openSpread(mid){const m=findMatchById(mid);if(!m)return;
+  currentSpreadMatch=mid;currentSpreadTab='match';currentSpreadStat=false;
   half1TotalLine=1.5;half2TotalLine=1.5;
   document.getElementById('spreadModal').classList.add('show');
-  renderSpreadHead();renderSpreadTabs();renderSpreadBody();
-}
+  renderSpreadHead();renderSpreadTabs();renderSpreadBody();}
 function closeSpread(){document.getElementById('spreadModal').classList.remove('show');currentSpreadMatch=null;}
 function toggleStats(){currentSpreadStat=!currentSpreadStat;document.getElementById('statsBtn').classList.toggle('active',currentSpreadStat);renderSpreadBody();}
 function renderSpreadHead(){
   const m=findMatchById(currentSpreadMatch);if(!m)return;
-  const isTennis=m.league&&m.league.includes('🎾');
-  const isBasket=m.league&&m.league.includes('🏀');
-  const isEsport=m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'));
-  let state,scoreText,timeText;
-  if(isTennis){state=getTennisState(m);const[s1,s2]=state.setsScore;const[g1,g2]=state.gamesInSet;
-    scoreText=s1+':'+s2+(state.live?' <span style="font-size:13px;color:var(--text-dim)">('+g1+':'+g2+', '+state.points[0]+'-'+state.points[1]+')</span>':'');
-    timeText=state.live?'🔴 '+state.timeStr:(state.isFinished?'Завершён':'Скоро');}
-  else if(isBasket){state=getBasketState(m);scoreText=state.score[0]+':'+state.score[1];
-    timeText=state.live?'🔴 '+state.timeStr:(state.isBreak?'⏸ Перерыв':(state.isFinished?'Завершён':'Скоро'));}
-  else if(isEsport){state=getEsportState(m);
-    if(state.game==='cs2'){const[m1,m2]=state.mapsScore;scoreText=m1+':'+m2+(state.live?' <span style="font-size:13px;color:var(--text-dim)">(карта '+(state.currentMap+1)+', раунд '+(state.currentRound+1)+' '+state.roundsInMap[0]+':'+state.roundsInMap[1]+')</span>':'');}
-    else{const[k1,k2]=state.killScore;scoreText=k1+':'+k2;}
-    timeText=state.live?'🔴 '+state.timeStr:(state.isFinished?'Завершён':'Скоро');}
-  else{state=getMatchState(m);const showScore=state.live||state.isFinished||state.isBreak;
-    scoreText=showScore?(state.score[0]+':'+state.score[1]):'';
-    timeText=state.live?'🔴 '+state.timeStr:(state.isBreak?'⏸ Перерыв':(state.isFinished?'Завершён':'Скоро'));}
+  const isT=m.league&&m.league.includes('🎾');const isB=m.league&&m.league.includes('🏀');
+  const isE=m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'));
+  let state,sc,t;
+  if(isT){state=getTennisState(m);const[s1,s2]=state.setsScore;const[g1,g2]=state.gamesInSet;
+    sc=s1+':'+s2+(state.live?' <span style="font-size:13px;color:var(--text-dim)">('+g1+':'+g2+', '+state.points[0]+'-'+state.points[1]+')</span>':'');
+    t=state.live?'🔴 '+state.timeStr:(state.isFinished?'Завершён':'Скоро');}
+  else if(isB){state=getBasketState(m);sc=state.score[0]+':'+state.score[1];
+    t=state.live?'🔴 '+state.timeStr:(state.isBreak?'⏸ Перерыв':(state.isFinished?'Завершён':'Скоро'));}
+  else if(isE){state=getEsportState(m);
+    if(state.game==='cs2'){const[mm1,mm2]=state.mapsScore;sc=mm1+':'+mm2+(state.live?' <span style="font-size:13px;color:var(--text-dim)">(карта '+(state.currentMap+1)+', раунд '+(state.currentRound+1)+' '+state.roundsInMap[0]+':'+state.roundsInMap[1]+')</span>':'');}
+    else{const[k1,k2]=state.killScore;sc=k1+':'+k2;}
+    t=state.live?'🔴 '+state.timeStr:(state.isFinished?'Завершён':'Скоро');}
+  else{state=getMatchState(m);const ss=state.live||state.isFinished||state.isBreak;
+    sc=ss?(state.score[0]+':'+state.score[1]):'';
+    t=state.live?'🔴 '+state.timeStr:(state.isBreak?'⏸ Перерыв':(state.isFinished?'Завершён':'Скоро'));}
   document.getElementById('spreadHeadInfo').innerHTML='<div class="spread-league">'+m.league+'</div>'+
-    '<div class="spread-teams-line"><span>'+m.home+' — '+m.away+'</span>'+(scoreText?'<span class="sc">'+scoreText+'</span>':'')+'</div>'+
-    '<div class="spread-meta">'+timeText+'</div>';
+    '<div class="spread-teams-line"><span>'+m.home+' — '+m.away+'</span>'+(sc?'<span class="sc">'+sc+'</span>':'')+'</div>'+
+    '<div class="spread-meta">'+t+'</div>';
 }
 function renderSpreadTabs(){
   const tabs=[{id:'match',label:'Матч'},{id:'half1',label:'1-й тайм'},{id:'half2',label:'2-й тайм'}];
@@ -1363,187 +1197,187 @@ function renderSpreadTabs(){
 }
 function setSpreadTab(id){currentSpreadTab=id;renderSpreadTabs();renderSpreadBody();}
 function marketBtn(label,value,opts){
-  const selected=isSelected(opts.matchId,opts.marketKey,opts.outcome);
+  const sel=isSelected(opts.matchId,opts.marketKey,opts.outcome);
   const m=findMatchById(opts.matchId);const state=getSportState(m);
   const locked=state.isFinished;
-  return '<div class="market-btn '+(selected?'selected ':'')+(locked?'locked':'')+'" '+
+  return '<div class="market-btn '+(sel?'selected ':'')+(locked?'locked':'')+'" '+
     (locked?'':'onclick="event.stopPropagation();marketClick('+opts.matchId+',\''+(opts.market||'')+'\','+opts.outcome+','+value+',\''+(opts.label||'')+'\',\''+(opts.marketKey||'')+'\')"')+'>'+
     '<span class="mbl">'+label+'</span><span class="mbv">'+(value>0?value.toFixed(2):'—')+'</span></div>';
 }
-function marketClick(matchId,market,outcome,odds,label,marketKey){addBet(matchId,market,outcome,odds,label,marketKey);}
+function marketClick(mid,market,o,odds,label,mk){addBet(mid,market,o,odds,label,mk);}
 function renderSpreadBody(){
   const body=document.getElementById('spreadBody');
   if(currentSpreadStat){renderStats(body);return;}
   const m=findMatchById(currentSpreadMatch);if(!m){body.innerHTML='<div class="no-data">Матч не найден</div>';return;}
-  const isTennis=m.league&&m.league.includes('🎾');
-  const isBasket=m.league&&m.league.includes('🏀');
-  const isEsport=m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'));
+  const isT=m.league&&m.league.includes('🎾');const isB=m.league&&m.league.includes('🏀');
+  const isE=m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'));
   let html='';
-  if(isTennis)html=renderTennisSpread(m);
-  else if(isBasket)html=renderBasketSpread(m);
-  else if(isEsport)html=renderEsportSpread(m);
-  else html=renderFootballSpread(m);
+  if(isT)html=renderTennisSpread(m);else if(isB)html=renderBasketSpread(m);else if(isE)html=renderEsportSpread(m);else html=renderFootballSpread(m);
   body.innerHTML=html;
 }
 function renderTennisSpread(m){
-  const state=getTennisState(m);const odds=getTennisOdds(m,state);
-  let html='';
+  const state=getTennisState(m);const odds=getTennisOdds(m,state);let html='';
   html+='<div class="market-section"><div class="market-title">Исход матча</div><div class="market-row">'+
     marketBtn('П1',odds[0],{matchId:m.id,market:'Исход',outcome:0,label:'П1',marketKey:'tennis_1'})+
-    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'tennis_2'})+
-  '</div></div>';
-  const totalLines=[18.5,20.5,22.5,24.5,26.5];
-  const available=totalLines.filter(l=>{if(state.totalGames>l)return false;if(state.isFinished&&state.totalGames<l)return false;return true;});
-  if(available.length>0){
-    html+='<div class="market-section"><div class="market-title">Тотал геймов</div>';
-    if(!available.includes(totalLine))totalLine=available[Math.floor(available.length/2)];
-    html+='<div class="total-selector">';
-    available.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});
-    html+='</div>';
+    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'tennis_2'})+'</div></div>';
+  const tl=[18.5,20.5,22.5,24.5,26.5];const av=tl.filter(l=>{if(state.totalGames>l)return false;if(state.isFinished&&state.totalGames<l)return false;return true;});
+  if(av.length>0){html+='<div class="market-section"><div class="market-title">Тотал геймов</div>';
+    if(!av.includes(totalLine))totalLine=av[Math.floor(av.length/2)];
+    html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});html+='</div>';
     const t=getTennisTotalGamesOdds(state,totalLine);
     html+='<div class="market-row">'+
       marketBtn('Больше '+totalLine,t[0],{matchId:m.id,market:'Тотал геймов '+totalLine,outcome:0,label:'Б '+totalLine,marketKey:'tennis_total_over_'+totalLine})+
-      marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал геймов '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'tennis_total_under_'+totalLine})+
-    '</div></div>';
-  }
+      marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал геймов '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'tennis_total_under_'+totalLine})+'</div></div>';}
   html+='<div class="market-section"><div class="market-title">Фора по сетам</div><div class="market-row">'+
     marketBtn('Ф1 -1.5',getTennisHandicapOdds(state,-1.5),{matchId:m.id,market:'Фора сетов',outcome:0,label:'Ф1 -1.5',marketKey:'tennis_h1_-1.5'})+
-    marketBtn('Ф2 +1.5',getTennisHandicapOdds(state,1.5),{matchId:m.id,market:'Фора сетов',outcome:1,label:'Ф2 +1.5',marketKey:'tennis_h2_1.5'})+
-  '</div></div>';
+    marketBtn('Ф2 +1.5',getTennisHandicapOdds(state,1.5),{matchId:m.id,market:'Фора сетов',outcome:1,label:'Ф2 +1.5',marketKey:'tennis_h2_1.5'})+'</div></div>';
   html+='<div class="market-section"><div class="market-title">Точный счёт по сетам</div><div class="score-grid" style="grid-template-columns:repeat(2,1fr)">';
-  getTennisExactSetsOdds(state).forEach(e=>{
-    html+='<div class="score-cell '+(isSelected(m.id,'tennis_exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Счёт по сетам\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'tennis_exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';
-  });
-  html+='</div></div>';
-  return html;
+  getTennisExactSetsOdds(state).forEach(e=>{html+='<div class="score-cell '+(isSelected(m.id,'tennis_exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Счёт по сетам\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'tennis_exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';});
+  html+='</div></div>';return html;
 }
 function renderBasketSpread(m){
-  const state=getBasketState(m);const odds=getBasketOdds(m,state);
-  let html='';
+  const state=getBasketState(m);const odds=getBasketOdds(m,state);let html='';
   html+='<div class="market-section"><div class="market-title">Исход матча</div><div class="market-row">'+
     marketBtn('П1',odds[0],{matchId:m.id,market:'Исход',outcome:0,label:'П1',marketKey:'basket_1'})+
-    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'basket_2'})+
-  '</div></div>';
-  const totalNow=state.score[0]+state.score[1];
-  const totalLines=[180.5,195.5,210.5,225.5,240.5];
-  const available=totalLines.filter(l=>{if(totalNow>l)return false;if(state.isFinished&&totalNow<l)return false;return true;});
-  if(available.length>0){
-    html+='<div class="market-section"><div class="market-title">Общий тотал очков</div>';
-    if(!available.includes(totalLine))totalLine=available[Math.floor(available.length/2)];
-    html+='<div class="total-selector">';
-    available.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});
-    html+='</div>';
+    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'basket_2'})+'</div></div>';
+  const tn=state.score[0]+state.score[1];const tl=[180.5,195.5,210.5,225.5,240.5];
+  const av=tl.filter(l=>{if(tn>l)return false;if(state.isFinished&&tn<l)return false;return true;});
+  if(av.length>0){html+='<div class="market-section"><div class="market-title">Общий тотал очков</div>';
+    if(!av.includes(totalLine))totalLine=av[Math.floor(av.length/2)];
+    html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});html+='</div>';
     const t=getBasketTotalOdds(state,totalLine);
     html+='<div class="market-row">'+
       marketBtn('Больше '+totalLine,t[0],{matchId:m.id,market:'Тотал очков '+totalLine,outcome:0,label:'Б '+totalLine,marketKey:'basket_total_over_'+totalLine})+
-      marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал очков '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'basket_total_under_'+totalLine})+
-    '</div></div>';
-  }
+      marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал очков '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'basket_total_under_'+totalLine})+'</div></div>';}
   html+='<div class="market-section"><div class="market-title">Фора</div><div class="market-row">'+
     marketBtn('Ф1 -5.5',getBasketHandicapOdds(state,-5.5),{matchId:m.id,market:'Фора',outcome:0,label:'Ф1 -5.5',marketKey:'basket_h1_-5.5'})+
-    marketBtn('Ф2 +5.5',getBasketHandicapOdds(state,5.5),{matchId:m.id,market:'Фора',outcome:1,label:'Ф2 +5.5',marketKey:'basket_h2_5.5'})+
-  '</div></div>';
+    marketBtn('Ф2 +5.5',getBasketHandicapOdds(state,5.5),{matchId:m.id,market:'Фора',outcome:1,label:'Ф2 +5.5',marketKey:'basket_h2_5.5'})+'</div></div>';
   html+='<div class="market-section"><div class="market-title">Победа в четверти</div>';
-  for(let q=0;q<4;q++){
-    const qo=getBasketQuarterOdds(state,q);
-    const qLabel=q<state.currentQuarter?'Q'+(q+1)+' ✓':(q===state.currentQuarter?'Q'+(q+1)+' (текущая)':'Q'+(q+1));
-    html+='<div style="color:var(--text-dim);font-size:11px;margin:6px 0 4px 0">'+qLabel+'</div>';
+  for(let q=0;q<4;q++){const qo=getBasketQuarterOdds(state,q);
+    const ql=q<state.currentQuarter?'Q'+(q+1)+' ✓':(q===state.currentQuarter?'Q'+(q+1)+' (текущая)':'Q'+(q+1));
+    html+='<div style="color:var(--text-dim);font-size:11px;margin:6px 0 4px 0">'+ql+'</div>';
     html+='<div class="market-row">'+
       marketBtn('П1',qo[0],{matchId:m.id,market:'Четверть Q'+(q+1),outcome:0,label:'П1',marketKey:'basket_q'+(q+1)+'_1'})+
-      marketBtn('П2',qo[1],{matchId:m.id,market:'Четверть Q'+(q+1),outcome:2,label:'П2',marketKey:'basket_q'+(q+1)+'_2'})+
-    '</div>';
-  }
-  html+='</div>';
-  return html;
+      marketBtn('П2',qo[1],{matchId:m.id,market:'Четверть Q'+(q+1),outcome:2,label:'П2',marketKey:'basket_q'+(q+1)+'_2'})+'</div>';}
+  html+='</div>';return html;
 }
 function renderEsportSpread(m){
-  const state=getEsportState(m);const odds=getEsportOdds(m,state);
-  let html='';
+  const state=getEsportState(m);const odds=getEsportOdds(m,state);let html='';
   html+='<div class="market-section"><div class="market-title">Исход матча</div><div class="market-row">'+
     marketBtn('П1',odds[0],{matchId:m.id,market:'Исход',outcome:0,label:'П1',marketKey:'esport_1'})+
-    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'esport_2'})+
-  '</div></div>';
+    marketBtn('П2',odds[2],{matchId:m.id,market:'Исход',outcome:2,label:'П2',marketKey:'esport_2'})+'</div></div>';
   if(state.game==='cs2'){
-    const totalNow=state.totalRounds;
-    const totalLines=[18.5,22.5,26.5,30.5,34.5];
-    const available=totalLines.filter(l=>{if(totalNow>l)return false;if(state.isFinished&&totalNow<l)return false;return true;});
-    if(available.length>0){
-      html+='<div class="market-section"><div class="market-title">Тотал раундов</div>';
-      if(!available.includes(totalLine))totalLine=available[Math.floor(available.length/2)];
-      html+='<div class="total-selector">';
-      available.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});
-      html+='</div>';
+    const tn=state.totalRounds;const tl=[18.5,22.5,26.5,30.5,34.5];
+    const av=tl.filter(l=>{if(tn>l)return false;if(state.isFinished&&tn<l)return false;return true;});
+    if(av.length>0){html+='<div class="market-section"><div class="market-title">Тотал раундов</div>';
+      if(!av.includes(totalLine))totalLine=av[Math.floor(av.length/2)];
+      html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});html+='</div>';
       const t=getEsportTotalRoundsOdds(state,totalLine);
       html+='<div class="market-row">'+
         marketBtn('Больше '+totalLine,t[0],{matchId:m.id,market:'Тотал раундов '+totalLine,outcome:0,label:'Б '+totalLine,marketKey:'esport_total_over_'+totalLine})+
-        marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал раундов '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'esport_total_under_'+totalLine})+
-      '</div></div>';
-    }
-    if(state.isPistolRound&&state.live){
-      const p=getEsportPistolRoundOdds(m,state);
+        marketBtn('Меньше '+totalLine,t[1],{matchId:m.id,market:'Тотал раундов '+totalLine,outcome:1,label:'М '+totalLine,marketKey:'esport_total_under_'+totalLine})+'</div></div>';}
+    if(state.isPistolRound&&state.live){const p=getEsportPistolRoundOdds(m,state);
       html+='<div class="market-section"><div class="market-title">🎯 Пистолетный раунд</div><div class="market-row">'+
         marketBtn('П1',p[0],{matchId:m.id,market:'Пистолетка',outcome:0,label:'П1',marketKey:'esport_pistol_1'})+
-        marketBtn('П2',p[1],{matchId:m.id,market:'Пистолетка',outcome:2,label:'П2',marketKey:'esport_pistol_2'})+
-      '</div></div>';
-    }
+        marketBtn('П2',p[1],{matchId:m.id,market:'Пистолетка',outcome:2,label:'П2',marketKey:'esport_pistol_2'})+'</div></div>';}
     html+='<div class="market-section"><div class="market-title">Победа по картам (Bo3)</div><div class="score-grid" style="grid-template-columns:repeat(2,1fr)">';
-    getEsportMapsOdds(state).forEach(e=>{
-      html+='<div class="score-cell '+(isSelected(m.id,'esport_exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Счёт по картам\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'esport_exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';
-    });
+    getEsportMapsOdds(state).forEach(e=>{html+='<div class="score-cell '+(isSelected(m.id,'esport_exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Счёт по картам\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'esport_exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';});
     html+='</div></div>';
   } else {
     html+='<div class="market-section"><div class="market-title">Тотал киллов</div><div class="market-row">'+
       marketBtn('Б 45.5',1.90,{matchId:m.id,market:'Киллы',outcome:0,label:'Б 45.5',marketKey:'dota_kills_over'})+
-      marketBtn('М 45.5',1.90,{matchId:m.id,market:'Киллы',outcome:1,label:'М 45.5',marketKey:'dota_kills_under'})+
-    '</div></div>';
+      marketBtn('М 45.5',1.90,{matchId:m.id,market:'Киллы',outcome:1,label:'М 45.5',marketKey:'dota_kills_under'})+'</div></div>';
   }
   return html;
 }
 function renderFootballSpread(m){
-  const state=getMatchState(m);const mainOdds=getMatchOdds(m,state);
-  const dcOdds=getDoubleChanceOdds(mainOdds);const nextGoal=getNextGoalOdds(state);
-  const btts=getBttsOdds(state);const exact=getExactScoreOdds(state);
-  const[h,a]=state.score;const totalGoals=h+a;
-  let html='';
-  html+='<div class="market-section"><div class="market-title">Исход матча</div><div class="market-row">'+
-    marketBtn('1',mainOdds[0],{matchId:m.id,market:'Исход',outcome:0,label:'1',marketKey:'main_1'})+
-    marketBtn('X',mainOdds[1],{matchId:m.id,market:'Исход',outcome:1,label:'X',marketKey:'main_X'})+
-    marketBtn('2',mainOdds[2],{matchId:m.id,market:'Исход',outcome:2,label:'2',marketKey:'main_2'})+
-  '</div><div class="market-row">'+
-    marketBtn('1X',dcOdds[0],{matchId:m.id,market:'Двойной шанс',outcome:0,label:'1X',marketKey:'dc_1X'})+
-    marketBtn('12',dcOdds[1],{matchId:m.id,market:'Двойной шанс',outcome:1,label:'12',marketKey:'dc_12'})+
-    marketBtn('X2',dcOdds[2],{matchId:m.id,market:'Двойной шанс',outcome:2,label:'X2',marketKey:'dc_X2'})+
-  '</div></div>';
-  const totalLines=[0.5,1.5,2,2.5,3,3.5,4.5,5.5];
-  const available=totalLines.filter(line=>{if(totalGoals>line)return false;if(state.minute>=90&&totalGoals<line)return false;return true;});
-  html+='<div class="market-section"><div class="market-title">Тотал голов в матче</div>';
-  if(available.length>0){
-    if(!available.includes(totalLine))totalLine=available[Math.floor(available.length/2)];
-    html+='<div class="total-selector">';
-    available.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});
+  const state=getMatchState(m);const mo=getMatchOdds(m,state);
+  const dco=getDoubleChanceOdds(mo);const ng=getNextGoalOdds(state);
+  const bt=getBttsOdds(state);const ex=getExactScoreOdds(state);
+  const[h,a]=state.score;const tg=h+a;let html='';
+  if(currentSpreadTab==='match'){
+    html+='<div class="market-section"><div class="market-title">Исход матча</div><div class="market-row">'+
+      marketBtn('1',mo[0],{matchId:m.id,market:'Исход',outcome:0,label:'1',marketKey:'main_1'})+
+      marketBtn('X',mo[1],{matchId:m.id,market:'Исход',outcome:1,label:'X',marketKey:'main_X'})+
+      marketBtn('2',mo[2],{matchId:m.id,market:'Исход',outcome:2,label:'2',marketKey:'main_2'})+'</div>'+
+      '<div class="market-row">'+
+      marketBtn('1X',dco[0],{matchId:m.id,market:'Двойной шанс',outcome:0,label:'1X',marketKey:'dc_1X'})+
+      marketBtn('12',dco[1],{matchId:m.id,market:'Двойной шанс',outcome:1,label:'12',marketKey:'dc_12'})+
+      marketBtn('X2',dco[2],{matchId:m.id,market:'Двойной шанс',outcome:2,label:'X2',marketKey:'dc_X2'})+'</div></div>';
+    const tl=[0.5,1.5,2,2.5,3,3.5,4.5,5.5];
+    const av=tl.filter(l=>{if(tg>l)return false;if(state.minute>=90&&tg<l)return false;return true;});
+    html+='<div class="market-section"><div class="market-title">Тотал голов в матче</div>';
+    if(av.length>0){if(!av.includes(totalLine))totalLine=av[Math.floor(av.length/2)];
+      html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(totalLine===n?'active':'')+'" onclick="setTotal('+n+')">'+n+'</button>';});html+='</div>';
+      const to=getTotalOdds(state,totalLine);
+      if(tg===totalLine)html+='<div style="color:var(--text-dim);text-align:center;padding:10px;font-size:12px">Тотал ровно '+totalLine+' — возврат</div>';
+      else html+='<div class="market-row">'+
+        marketBtn('Больше '+totalLine,to[0],{matchId:m.id,market:'Тотал '+totalLine,outcome:0,label:'ТБ '+totalLine,marketKey:'total_over_'+totalLine})+
+        marketBtn('Меньше '+totalLine,to[1],{matchId:m.id,market:'Тотал '+totalLine,outcome:1,label:'ТМ '+totalLine,marketKey:'total_under_'+totalLine})+'</div>';}
+    else html+='<div style="color:var(--text-dim);text-align:center;padding:14px;font-size:13px">Нет доступных линий</div>';
     html+='</div>';
-    const tOdds=getTotalOdds(state,totalLine);
-    if(totalGoals===totalLine)html+='<div style="color:var(--text-dim);text-align:center;padding:10px;font-size:12px">Тотал ровно '+totalLine+' — возврат</div>';
-    else html+='<div class="market-row">'+
-      marketBtn('Больше '+totalLine,tOdds[0],{matchId:m.id,market:'Тотал '+totalLine,outcome:0,label:'ТБ '+totalLine,marketKey:'total_over_'+totalLine})+
-      marketBtn('Меньше '+totalLine,tOdds[1],{matchId:m.id,market:'Тотал '+totalLine,outcome:1,label:'ТМ '+totalLine,marketKey:'total_under_'+totalLine})+
-    '</div>';
-  } else html+='<div style="color:var(--text-dim);text-align:center;padding:14px;font-size:13px">Нет доступных линий</div>';
-  html+='</div>';
-  html+='<div class="market-section"><div class="market-title">Обе команды забьют</div><div class="market-row">'+
-    marketBtn('Да',btts[0],{matchId:m.id,market:'Обе забьют',outcome:0,label:'Да',marketKey:'btts_yes'})+
-    marketBtn('Нет',btts[1],{matchId:m.id,market:'Обе забьют',outcome:1,label:'Нет',marketKey:'btts_no'})+
-  '</div></div>';
-  html+='<div class="market-section"><div class="market-title">Следующий гол</div><div class="market-row">'+
-    marketBtn(m.home,nextGoal[0],{matchId:m.id,market:'Следующий гол',outcome:0,label:m.home,marketKey:'next_1'})+
-    marketBtn('Никто',nextGoal[1],{matchId:m.id,market:'Следующий гол',outcome:1,label:'Никто',marketKey:'next_none'})+
-    marketBtn(m.away,nextGoal[2],{matchId:m.id,market:'Следующий гол',outcome:2,label:m.away,marketKey:'next_2'})+
-  '</div></div>';
-  html+='<div class="market-section"><div class="market-title">Точный счёт</div><div class="score-grid">';
-  exact.forEach(e=>{
-    html+='<div class="score-cell '+(isSelected(m.id,'exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Точный счёт\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';
-  });
-  html+='</div></div>';
+    html+='<div class="market-section"><div class="market-title">Обе команды забьют</div><div class="market-row">'+
+      marketBtn('Да',bt[0],{matchId:m.id,market:'Обе забьют',outcome:0,label:'Да',marketKey:'btts_yes'})+
+      marketBtn('Нет',bt[1],{matchId:m.id,market:'Обе забьют',outcome:1,label:'Нет',marketKey:'btts_no'})+'</div></div>';
+    html+='<div class="market-section"><div class="market-title">Следующий гол</div><div class="market-row">'+
+      marketBtn(m.home,ng[0],{matchId:m.id,market:'Следующий гол',outcome:0,label:m.home,marketKey:'next_1'})+
+      marketBtn('Никто',ng[1],{matchId:m.id,market:'Следующий гол',outcome:1,label:'Никто',marketKey:'next_none'})+
+      marketBtn(m.away,ng[2],{matchId:m.id,market:'Следующий гол',outcome:2,label:m.away,marketKey:'next_2'})+'</div></div>';
+    html+='<div class="market-section"><div class="market-title">Точный счёт</div><div class="score-grid">';
+    ex.forEach(e=>{html+='<div class="score-cell '+(isSelected(m.id,'exact_'+e.score,e.score)?'selected':'')+'" onclick="event.stopPropagation();marketClick('+m.id+',\'Точный счёт\',\''+e.score+'\','+e.odds+',\''+e.score+'\',\'exact_'+e.score+'\')"><div class="scl">'+e.score+'</div><div class="scv">'+e.odds.toFixed(2)+'</div></div>';});
+    html+='</div></div>';
+  }
+  if(currentSpreadTab==='half1'){
+    if(state.phase!=='first'){html+='<div class="no-data">⏸ 1-й тайм завершён<br><br>Ставки откроются в следующем матче</div>';}
+    else{
+      const h1L=[0.5,1.5,2.5,3.5];const av=h1L.filter(l=>{if(tg>l)return false;if(state.minute>=45&&tg<l)return false;return true;});
+      html+='<div class="market-section"><div class="market-title">Тотал голов в 1-м тайме</div>';
+      if(av.length===0)html+='<div style="color:var(--text-dim);text-align:center;padding:14px;font-size:13px">Нет доступных линий</div>';
+      else{if(!av.includes(half1TotalLine))half1TotalLine=av[0];
+        html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(half1TotalLine===n?'active':'')+'" onclick="setHalf1Total('+n+')">'+n+'</button>';});html+='</div>';
+        const h1=getHalfTotalOdds(state,1,half1TotalLine);
+        if(h1&&Array.isArray(h1)){
+          if(tg===half1TotalLine)html+='<div style="color:var(--text-dim);text-align:center;padding:10px;font-size:12px">Тотал ровно '+half1TotalLine+' — возврат</div>';
+          else html+='<div class="market-row">'+
+            marketBtn('Больше '+half1TotalLine,h1[0],{matchId:m.id,market:'Тотал 1Т '+half1TotalLine,outcome:0,label:'ТБ '+half1TotalLine+' 1Т',marketKey:'h1_over_'+half1TotalLine})+
+            marketBtn('Меньше '+half1TotalLine,h1[1],{matchId:m.id,market:'Тотал 1Т '+half1TotalLine,outcome:1,label:'ТМ '+half1TotalLine+' 1Т',marketKey:'h1_under_'+half1TotalLine})+'</div>';}}
+      html+='</div>';
+      const h1a=state.scenario.goals.filter(g=>g[0]===0&&g[1]<=45).length;
+      const h1b=state.scenario.goals.filter(g=>g[0]===1&&g[1]<=45).length;
+      let p1,pX,p2;
+      if(h1a>h1b){p1=0.60;pX=0.25;p2=0.15;}else if(h1b>h1a){p1=0.15;pX=0.25;p2=0.60;}else{p1=0.33;pX=0.34;p2=0.33;}
+      html+='<div class="market-section"><div class="market-title">Исход 1-го тайма</div><div class="market-row">'+
+        marketBtn('1',Math.round((1/p1)*100)/100,{matchId:m.id,market:'Исход 1Т',outcome:0,label:'1',marketKey:'h1_1'})+
+        marketBtn('X',Math.round((1/pX)*100)/100,{matchId:m.id,market:'Исход 1Т',outcome:1,label:'X',marketKey:'h1_X'})+
+        marketBtn('2',Math.round((1/p2)*100)/100,{matchId:m.id,market:'Исход 1Т',outcome:2,label:'2',marketKey:'h1_2'})+'</div></div>';
+    }
+  }
+  if(currentSpreadTab==='half2'){
+    if(state.phase==='after'){html+='<div class="no-data">⏸ Матч завершён<br><br>Ставки откроются в следующем матче</div>';}
+    else{
+      const g2=state.scenario.goals.filter(g=>g[1]>45&&g[1]<=state.minute).length;
+      const h2L=[0.5,1.5,2.5,3.5];const av=h2L.filter(l=>{if(g2>l)return false;if(state.minute>=90&&g2<l)return false;return true;});
+      html+='<div class="market-section"><div class="market-title">Тотал голов во 2-м тайме</div>';
+      if(av.length===0)html+='<div style="color:var(--text-dim);text-align:center;padding:14px;font-size:13px">Нет доступных линий</div>';
+      else{if(!av.includes(half2TotalLine))half2TotalLine=av[0];
+        html+='<div class="total-selector">';av.forEach(n=>{html+='<button class="total-num '+(half2TotalLine===n?'active':'')+'" onclick="setHalf2Total('+n+')">'+n+'</button>';});html+='</div>';
+        const h2=getHalfTotalOdds(state,2,half2TotalLine);
+        if(h2&&Array.isArray(h2)){
+          if(g2===half2TotalLine)html+='<div style="color:var(--text-dim);text-align:center;padding:10px;font-size:12px">Тотал ровно '+half2TotalLine+' — возврат</div>';
+          else html+='<div class="market-row">'+
+            marketBtn('Больше '+half2TotalLine,h2[0],{matchId:m.id,market:'Тотал 2Т '+half2TotalLine,outcome:0,label:'ТБ '+half2TotalLine+' 2Т',marketKey:'h2_over_'+half2TotalLine})+
+            marketBtn('Меньше '+half2TotalLine,h2[1],{matchId:m.id,market:'Тотал 2Т '+half2TotalLine,outcome:1,label:'ТМ '+half2TotalLine+' 2Т',marketKey:'h2_under_'+half2TotalLine})+'</div>';}}
+      html+='</div>';
+      const g2a=state.scenario.goals.filter(g=>g[0]===0&&g[1]>45).length;
+      const g2b=state.scenario.goals.filter(g=>g[0]===1&&g[1]>45).length;
+      let p1,pX,p2;
+      if(g2a>g2b){p1=0.60;pX=0.25;p2=0.15;}else if(g2b>g2a){p1=0.15;pX=0.25;p2=0.60;}else{p1=0.33;pX=0.34;p2=0.33;}
+      html+='<div class="market-section"><div class="market-title">Исход 2-го тайма</div><div class="market-row">'+
+        marketBtn('1',Math.round((1/p1)*100)/100,{matchId:m.id,market:'Исход 2Т',outcome:0,label:'1',marketKey:'h2_1'})+
+        marketBtn('X',Math.round((1/pX)*100)/100,{matchId:m.id,market:'Исход 2Т',outcome:1,label:'X',marketKey:'h2_X'})+
+        marketBtn('2',Math.round((1/p2)*100)/100,{matchId:m.id,market:'Исход 2Т',outcome:2,label:'2',marketKey:'h2_2'})+'</div></div>';
+    }
+  }
   return html;
 }
 function setTotal(n){totalLine=n;renderSpreadBody();}
@@ -1556,8 +1390,8 @@ function renderStats(container){
   const s=getMatchStats(m,state);
   container.innerHTML='<div class="stats-body">'+
     '<div class="stat-item"><div class="stat-row"><span>'+m.home+'</span><span>'+m.away+'</span></div>'+
-      '<div class="stat-row"><span class="stat-val-home">'+s.possHome+'%</span><span>Владение</span><span class="stat-val-away">'+s.possAway+'%</span></div>'+
-      '<div class="stat-bar"><div class="stat-bar-home" style="width:'+s.possHome+'%"></div><div class="stat-bar-away" style="width:'+s.possAway+'%"></div></div></div>'+
+    '<div class="stat-row"><span class="stat-val-home">'+s.possHome+'%</span><span>Владение</span><span class="stat-val-away">'+s.possAway+'%</span></div>'+
+    '<div class="stat-bar"><div class="stat-bar-home" style="width:'+s.possHome+'%"></div><div class="stat-bar-away" style="width:'+s.possAway+'%"></div></div></div>'+
     '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">'+s.shotsHome+'</span><span>Удары</span><span class="stat-val-away">'+s.shotsAway+'</span></div></div>'+
     '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">'+s.onTargetHome+'</span><span>Удары в створ</span><span class="stat-val-away">'+s.onTargetAway+'</span></div></div>'+
     '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">'+s.attacksHome+'</span><span>Атаки</span><span class="stat-val-away">'+s.attacksAway+'</span></div></div>'+
@@ -1566,131 +1400,101 @@ function renderStats(container){
     '<div class="stat-item"><div class="stat-row"><span class="stat-val-home">🟨 '+s.yellowHome+' '+(s.redHome?'🟥 '+s.redHome:'')+'</span><span>Карточки</span><span class="stat-val-away">'+(s.redAway?'🟥 '+s.redAway+' ':'')+'🟨 '+s.yellowAway+'</span></div></div>'+
   '</div>';
 }
-
-// ============ ПРОВЕРКА РЕЗУЛЬТАТОВ ============
 function checkBetResults(){
-  if(!currentUser)return;
-  let changed=false;
+  if(!currentUser)return;let changed=false;
   betHistory.forEach(bet=>{
     if(bet.status!=='pending')return;
-    let allFinished=true,allWon=true,anyReturn=false;
+    let allFin=true,allWon=true,anyRet=false;
     for(const item of bet.items){
-      const m=findMatchById(item.matchId);if(!m){allFinished=false;break;}
-      const state=getSportState(m);
-      let finalScore=null;
-      if(state.isFinished&&state.cycleIndex===item.cycleIndex)finalScore=state.score;
+      const m=findMatchById(item.matchId);if(!m){allFin=false;break;}
+      const state=getSportState(m);let fs=null;
+      if(state.isFinished&&state.cycleIndex===item.cycleIndex)fs=state.score;
       else if(state.cycleIndex>item.cycleIndex){
-        if(m.league&&m.league.includes('🎾')){const sc=getTennisState(m);finalScore=sc.setsScore;}
-        else if(m.league&&m.league.includes('🏀')){const sc=getBasketState(m);finalScore=sc.score;}
-        else if(m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'))){const sc=getEsportState(m);finalScore=sc.game==='cs2'?sc.mapsScore:sc.killScore;}
-        else{const sc=generateMatchScenario(m,item.cycleIndex);let h=0,a=0;sc.goals.forEach(g=>{if(g[0]===0)h++;else a++;});finalScore=[h,a];}
-      } else {allFinished=false;break;}
-      const[h,a]=finalScore;const total=h+a;
-      let won=false,isReturn=false;
-      const mk=item.marketKey||'';
+        if(m.league&&m.league.includes('🎾')){const sc=getTennisState(m);fs=sc.setsScore;}
+        else if(m.league&&m.league.includes('🏀')){const sc=getBasketState(m);fs=sc.score;}
+        else if(m.league&&(m.league.includes('🎮')||m.league.includes('CS2')||m.league.includes('Dota'))){const sc=getEsportState(m);fs=sc.game==='cs2'?sc.mapsScore:sc.killScore;}
+        else{const sc=generateMatchScenario(m,item.cycleIndex);let h=0,a=0;sc.goals.forEach(g=>{if(g[0]===0)h++;else a++;});fs=[h,a];}
+      }else{allFin=false;break;}
+      const[h,a]=fs;const tot=h+a;let won=false,isRet=false;const mk=item.marketKey||'';
       if(mk.includes('_1')||mk.includes('П1'))won=(h>a);
       if(mk.includes('_2')||mk.includes('П2'))won=(a>h);
       if(mk==='main_X')won=(h===a);
       if(mk==='dc_1X')won=(h>=a);
       if(mk==='dc_12')won=(h!==a);
       if(mk==='dc_X2')won=(h<=a);
-      if(mk.startsWith('total_over_')){const line=parseFloat(mk.replace('total_over_',''));if(total>line)won=true;else if(total===line)isReturn=true;}
-      if(mk.startsWith('total_under_')){const line=parseFloat(mk.replace('total_under_',''));if(total<line)won=true;else if(total===line)isReturn=true;}
+      if(mk.startsWith('total_over_')){const l=parseFloat(mk.replace('total_over_',''));if(tot>l)won=true;else if(tot===l)isRet=true;}
+      if(mk.startsWith('total_under_')){const l=parseFloat(mk.replace('total_under_',''));if(tot<l)won=true;else if(tot===l)isRet=true;}
       if(mk==='btts_yes')won=(h>0&&a>0);
       if(mk==='btts_no')won=!(h>0&&a>0);
       if(mk.startsWith('next_'))won=true;
-      if(mk.startsWith('exact_')){const sc=mk.replace('exact_','');won=(sc===h+':'+a);}
-      if(mk.startsWith('tennis_exact_')){const sc=mk.replace('tennis_exact_','');won=(sc===h+':'+a);}
-      if(mk.startsWith('tennis_total_over_')){const line=parseFloat(mk.replace('tennis_total_over_',''));const tt=state.totalGamesFull||state.totalGames;if(tt>line)won=true;else if(tt===line)isReturn=true;}
-      if(mk.startsWith('tennis_total_under_')){const line=parseFloat(mk.replace('tennis_total_under_',''));const tt=state.totalGamesFull||state.totalGames;if(tt<line)won=true;else if(tt===line)isReturn=true;}
-      if(mk.startsWith('basket_total_over_')){const line=parseFloat(mk.replace('basket_total_over_',''));if(total>line)won=true;else if(total===line)isReturn=true;}
-      if(mk.startsWith('basket_total_under_')){const line=parseFloat(mk.replace('basket_total_under_',''));if(total<line)won=true;else if(total===line)isReturn=true;}
-      if(mk.startsWith('esport_total_over_')){const line=parseFloat(mk.replace('esport_total_over_',''));const tr=state.totalRoundsFull||state.totalRounds;if(tr>line)won=true;else if(tr===line)isReturn=true;}
-      if(mk.startsWith('esport_total_under_')){const line=parseFloat(mk.replace('esport_total_under_',''));const tr=state.totalRoundsFull||state.totalRounds;if(tr<line)won=true;else if(tr===line)isReturn=true;}
-      if(mk.startsWith('esport_exact_')){const sc=mk.replace('esport_exact_','');won=(sc===h+':'+a);}
-      if(isReturn)anyReturn=true;
-      if(!won&&!isReturn)allWon=false;
+      if(mk.startsWith('exact_')){const s=mk.replace('exact_','');won=(s===h+':'+a);}
+      if(mk.startsWith('tennis_exact_')){const s=mk.replace('tennis_exact_','');won=(s===h+':'+a);}
+      if(mk.startsWith('tennis_total_over_')){const l=parseFloat(mk.replace('tennis_total_over_',''));const tt=state.totalGamesFull||state.totalGames;if(tt>l)won=true;else if(tt===l)isRet=true;}
+      if(mk.startsWith('tennis_total_under_')){const l=parseFloat(mk.replace('tennis_total_under_',''));const tt=state.totalGamesFull||state.totalGames;if(tt<l)won=true;else if(tt===l)isRet=true;}
+      if(mk.startsWith('basket_total_over_')){const l=parseFloat(mk.replace('basket_total_over_',''));if(tot>l)won=true;else if(tot===l)isRet=true;}
+      if(mk.startsWith('basket_total_under_')){const l=parseFloat(mk.replace('basket_total_under_',''));if(tot<l)won=true;else if(tot===l)isRet=true;}
+      if(mk.startsWith('esport_total_over_')){const l=parseFloat(mk.replace('esport_total_over_',''));const tr=state.totalRoundsFull||state.totalRounds;if(tr>l)won=true;else if(tr===l)isRet=true;}
+      if(mk.startsWith('esport_total_under_')){const l=parseFloat(mk.replace('esport_total_under_',''));const tr=state.totalRoundsFull||state.totalRounds;if(tr<l)won=true;else if(tr===l)isRet=true;}
+      if(mk.startsWith('esport_exact_')){const s=mk.replace('esport_exact_','');won=(s===h+':'+a);}
+      if(isRet)anyRet=true;
+      if(!won&&!isRet)allWon=false;
     }
-    if(allFinished){
-      if(anyReturn&&!allWon){bet.status='lose';showToast('😔 Ставка не сыграла',false);}
-      else if(anyReturn&&allWon){bet.status='win';balance+=bet.stake;DB[currentUser].balance=balance;updateBalanceUI();showToast('🔄 ЧАСТИЧНЫЙ ВОЗВРАТ! +'+bet.stake+' ₽',true);}
-      else if(anyReturn){balance+=bet.stake;DB[currentUser].balance=balance;updateBalanceUI();showToast('🔄 ВОЗВРАТ: +'+bet.stake+' ₽',true);bet.status='return';}
+    if(allFin){
+      if(anyRet&&!allWon){bet.status='lose';showToast('😔 Ставка не сыграла',false);}
+      else if(anyRet&&allWon){bet.status='win';balance+=bet.stake;DB[currentUser].balance=balance;updateBalanceUI();showToast('🔄 ЧАСТИЧНЫЙ ВОЗВРАТ! +'+bet.stake+' ₽',true);}
+      else if(anyRet){balance+=bet.stake;DB[currentUser].balance=balance;updateBalanceUI();showToast('🔄 ВОЗВРАТ: +'+bet.stake+' ₽',true);bet.status='return';}
       else if(allWon){bet.status='win';balance+=bet.potentialWin;DB[currentUser].balance=balance;updateBalanceUI();showToast('🎉 ВЫИГРЫШ! +'+bet.potentialWin.toFixed(0)+' ₽',true);}
       else{bet.status='lose';showToast('😔 Ставка не сыграла',false);}
       changed=true;
     }
   });
-  if(changed){
-    DB[currentUser].balance=balance;DB[currentUser].history=betHistory;saveDB();
-    if(document.getElementById('pageProfile').style.display!=='none')renderProfile();
-  }
+  if(changed){DB[currentUser].balance=balance;DB[currentUser].history=betHistory;saveDB();
+    if(document.getElementById('pageProfile').style.display!=='none')renderProfile();}
 }
-
 function checkGoals(){
   if(!currentUser)return;
-  for(const sport in MATCHES_CACHE){
-    MATCHES_CACHE[sport].forEach(m=>{
-      const state=getSportState(m);
-      if(!state.live)return;
-      const key='goal_'+m.id+'_'+state.cycleIndex;
-      let cur='';
-      if(state.sport==='tennis')cur=state.setsScore.join(':')+'_'+state.gamesInSet.join(':');
-      else if(state.sport==='basket')cur=state.score.join(':');
-      else if(state.sport==='esport')cur=state.score.join(':');
-      else cur=state.score.join(':');
-      if(shownGoalKeys[key]&&shownGoalKeys[key]!==cur){
-        const myBet=betHistory.some(b=>b.status==='pending'&&b.items.some(it=>it.matchId===m.id));
-        if(myBet){
-          showToast('⚽ ГОЛ! '+m.home+' '+cur.replace('_',' ')+' '+m.away+' — ТВОЯ СТАВКА!',true);
-          const el=document.getElementById('match-'+m.id);
-          if(el){el.classList.add('goal-flash');setTimeout(()=>el.classList.remove('goal-flash'),2000);}
-          if(navigator.vibrate)navigator.vibrate([200,100,200]);
-        } else showToast('⚽ '+m.home+' '+cur.replace('_',' ')+' '+m.away,true);
-      }
-      shownGoalKeys[key]=cur;
-    });
-  }
+  for(const sp in MATCHES_CACHE){MATCHES_CACHE[sp].forEach(m=>{
+    const state=getSportState(m);if(!state.live)return;
+    const key='goal_'+m.id+'_'+state.cycleIndex;let cur='';
+    if(state.sport==='tennis')cur=state.setsScore.join(':')+'_'+state.gamesInSet.join(':');
+    else if(state.sport==='basket')cur=state.score.join(':');
+    else if(state.sport==='esport')cur=state.score.join(':');
+    else cur=state.score.join(':');
+    if(shownGoalKeys[key]&&shownGoalKeys[key]!==cur){
+      const myBet=betHistory.some(b=>b.status==='pending'&&b.items.some(it=>it.matchId===m.id));
+      if(myBet){showToast('⚽ ГОЛ! '+m.home+' '+cur.replace('_',' ')+' '+m.away+' — ТВОЯ СТАВКА!',true);
+        const el=document.getElementById('match-'+m.id);
+        if(el){el.classList.add('goal-flash');setTimeout(()=>el.classList.remove('goal-flash'),2000);}
+        if(navigator.vibrate)navigator.vibrate([200,100,200]);}
+      else showToast('⚽ '+m.home+' '+cur.replace('_',' ')+' '+m.away,true);
+    }
+    shownGoalKeys[key]=cur;
+  });}
 }
-
 setInterval(()=>{
   if(!currentUser)return;
   const now=new Date();
-  const hh=String(now.getHours()).padStart(2,'0');
-  const mm=String(now.getMinutes()).padStart(2,'0');
-  const ss=String(now.getSeconds()).padStart(2,'0');
-  const syncEl=document.getElementById('syncInfo');
-  if(syncEl)syncEl.textContent='🕒 '+hh+':'+mm+':'+ss+' • Синхр. у всех';
+  const hh=String(now.getHours()).padStart(2,'0');const mm=String(now.getMinutes()).padStart(2,'0');const ss=String(now.getSeconds()).padStart(2,'0');
+  const se=document.getElementById('syncInfo');if(se)se.textContent='🕒 '+hh+':'+mm+':'+ss+' • Синхр. у всех';
   if(!currentSpreadMatch)renderMatches();
-  checkGoals();
-  checkBetResults();
-  cleanLockedBets();
+  checkGoals();checkBetResults();cleanLockedBets();
   if(currentSpreadMatch){renderSpreadHead();renderSpreadBody();}
   if(currentUser&&document.getElementById('pageProfile').style.display!=='none')renderProfile();
 },1000);
-
-setInterval(()=>{
-  if(currentUser&&document.getElementById('pageRoulette').style.display!=='none')renderRoulette();
-},60000);
-
+setInterval(()=>{if(currentUser&&document.getElementById('pageRoulette').style.display!=='none')renderRoulette();},60000);
 setInterval(()=>{refreshMatches();},300000);
-
 let toastTimer;
 function showToast(text,ok=true){
   const t=document.getElementById('toast');
-  t.textContent=text;
-  t.style.background=ok?'var(--green)':'var(--red)';
-  t.classList.add('show');
-  clearTimeout(toastTimer);
+  t.textContent=text;t.style.background=ok?'var(--green)':'var(--red)';
+  t.classList.add('show');clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>t.classList.remove('show'),3000);
 }
-
 if(currentUser&&DB[currentUser]){
-  balance=DB[currentUser].balance;
-  freebet=DB[currentUser].freebet||0;
+  balance=DB[currentUser].balance;freebet=DB[currentUser].freebet||0;
   betHistory=DB[currentUser].history||[];
   enterApp();
 }
-
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&document.getElementById('authScreen').style.display!=='none')submitAuth();
 });
