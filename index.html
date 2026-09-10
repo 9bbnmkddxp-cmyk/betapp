@@ -89,6 +89,7 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .status.pending{color:#ffcc00}
 .status.win{color:#238636}
 .status.lose{color:#da3633}
+.status.return{color:#58a6ff}
 .deposit-btn-big{width:100%;padding:14px;background:linear-gradient(135deg,#238636,#2ea043);border:none;color:#fff;border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;margin-top:8px}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-120px);background:#238636;color:#fff;padding:14px 24px;border-radius:12px;font-weight:600;z-index:1000;transition:transform .3s;max-width:90%;text-align:center;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -119,8 +120,6 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .result-box p{color:#8b949e;font-size:14px;margin-bottom:20px}
 .result-box .emoji{font-size:64px;margin-bottom:8px}
 .sync-info{background:#0d1117;padding:8px 12px;border-radius:8px;font-size:11px;color:#8b949e;text-align:center;margin:8px 12px}
-
-/* МОДАЛКА РОСПИСИ */
 .spread-modal{position:fixed;inset:0;background:#0d1117;z-index:500;display:none;flex-direction:column;overflow:hidden}
 .spread-modal.show{display:flex}
 .spread-head{background:#161b22;padding:12px 16px;border-bottom:1px solid #30363d;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;gap:8px}
@@ -138,11 +137,8 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .spread-tab{padding:12px 16px;background:none;border:none;color:#8b949e;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
 .spread-tab.active{color:#ffcc00;border-bottom-color:#ffcc00}
 .spread-body{flex:1;overflow-y:auto;padding-bottom:100px;background:#0d1117}
-
 .market-section{background:#161b22;margin:8px 12px;border-radius:12px;padding:14px;border:1px solid #21262d}
 .market-title{font-size:14px;font-weight:700;color:#ffcc00;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.market-title .star{color:#8b949e;font-size:14px;cursor:pointer;background:none;border:none}
-.market-title .star.active{color:#ffcc00}
 .market-row{display:flex;gap:6px;margin-bottom:6px}
 .market-row:last-child{margin-bottom:0}
 .market-btn{flex:1;background:#21262d;border:2px solid transparent;border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;transition:.15s;min-width:0}
@@ -174,7 +170,6 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 </style>
 </head>
 <body>
-
 <div id="authScreen">
   <div class="logo">BET<span>APP</span></div>
   <div class="subtitle">Ставки на спорт • Live</div>
@@ -190,7 +185,6 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
     <button class="btn-primary" id="submitBtn" onclick="submitAuth()">Войти</button>
   </div>
 </div>
-
 <div id="appScreen">
   <div class="header">
     <div class="logo">BET<span>APP</span></div>
@@ -246,7 +240,6 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
     </div>
   </div>
 </div>
-
 <div class="badge" id="badge" onclick="toggleSlip()"><span id="badgeCount">0</span></div>
 <div class="slip" id="slip">
   <div class="slip-head"><div class="slip-title">🎫 Купон</div><button class="close-btn" onclick="toggleSlip()">✕</button></div>
@@ -304,6 +297,8 @@ let currentSpreadMatch = null;
 let currentSpreadTab = 'match';
 let currentSpreadStat = false;
 let totalLine = 2.5;
+let half1TotalLine = 0.5;
+let half2TotalLine = 0.5;
 
 const DAILY_LIMIT = 1500000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -469,43 +464,98 @@ function getTotalOdds(state, line){
   const totalGoals = h + a;
   const min = state.minute;
   const timeLeft = Math.max(5, 90 - min);
-  const expectedMore = Math.max(0, line - totalGoals);
-  const avgGoalsPerMin = 0.03;
-  const remainingGoals = avgGoalsPerMin * timeLeft;
-  let overProb;
-  if(totalGoals > line) overProb = 0.995;
-  else if(expectedMore <= 0) overProb = 0.99;
-  else if(expectedMore >= 3) overProb = 0.05;
+  let overOdds, underOdds;
+  if(totalGoals > line){ overOdds = 1.01; underOdds = 25.00; }
+  else if(state.isFinished || state.phase === 'after'){ overOdds = 25.00; underOdds = 1.01; }
   else {
-    const poissonLambda = remainingGoals;
-    let cumulative = 0;
-    let p = Math.exp(-poissonLambda);
-    for(let k = 0; k < expectedMore; k++){
-      cumulative += p;
-      p = p * poissonLambda / (k + 1);
+    const expectedMore = Math.max(0, line - totalGoals);
+    const remainingGoals = 0.03 * timeLeft;
+    let pOver;
+    if(expectedMore === 0) pOver = 0.99;
+    else {
+      let cumul = Math.exp(-remainingGoals);
+      let p = cumul;
+      for(let k = 1; k < expectedMore + 1; k++){
+        p = p * remainingGoals / k;
+        if(k < expectedMore) cumul += p;
+      }
+      pOver = 1 - cumul;
     }
-    overProb = 1 - cumulative;
+    pOver = Math.max(0.02, Math.min(0.98, pOver));
+    overOdds = Math.round((1/pOver) * 100) / 100;
+    underOdds = Math.round((1/(1-pOver)) * 100) / 100;
+    if(overOdds < 1.01) overOdds = 1.01;
+    if(underOdds < 1.01) underOdds = 1.01;
+    if(overOdds > 25) overOdds = 25;
+    if(underOdds > 25) underOdds = 25;
   }
-  overProb = Math.max(0.02, Math.min(0.98, overProb));
-  const underProb = 1 - overProb;
-  let over = Math.round((1 / overProb) * 100) / 100;
-  let under = Math.round((1 / underProb) * 100) / 100;
-  if(over < 1.01) over = 1.01;
-  if(under < 1.01) under = 1.01;
-  if(over > 30) over = 30;
-  if(under > 30) under = 30;
-  return [over, under];
+  return [overOdds, underOdds];
+}
+
+function getHalfTotalOdds(state, half, line){
+  if(half === 1){
+    if(state.phase !== 'first') return null;
+    const endH1 = 45 + state.scenario.injury1;
+    const [h, a] = state.score;
+    const goalsH1Now = h + a;
+    if(goalsH1Now > line){ return [1.01, 25.00]; }
+    if(state.minute >= 45){ return [25.00, 1.01]; }
+    const timeLeft = Math.max(1, 45 - state.minute);
+    const needed = line - goalsH1Now + 1;
+    const expected = timeLeft * 0.03;
+    let cumul = Math.exp(-expected);
+    let p = cumul;
+    for(let k = 1; k < needed; k++){
+      p = p * expected / k;
+      cumul += p;
+    }
+    let pOver = 1 - cumul;
+    pOver = Math.max(0.02, Math.min(0.98, pOver));
+    let over = Math.round((1/pOver) * 100) / 100;
+    let under = Math.round((1/(1-pOver)) * 100) / 100;
+    if(over < 1.01) over = 1.01;
+    if(under < 1.01) under = 1.01;
+    if(over > 25) over = 25;
+    if(under > 25) under = 25;
+    return [over, under];
+  } else {
+    if(state.phase === 'first' || state.phase === 'break') return 'notStarted';
+    if(state.phase === 'after') return null;
+    const goalsH2Now = state.scenario.goals.filter(g => g[1] > 45 && g[1] <= state.minute).length;
+    if(goalsH2Now > line){ return [1.01, 25.00]; }
+    if(state.minute >= 90){ return [25.00, 1.01]; }
+    const timeLeft = Math.max(1, 90 - state.minute);
+    const needed = line - goalsH2Now + 1;
+    const expected = timeLeft * 0.03;
+    let cumul = Math.exp(-expected);
+    let p = cumul;
+    for(let k = 1; k < needed; k++){
+      p = p * expected / k;
+      cumul += p;
+    }
+    let pOver = 1 - cumul;
+    pOver = Math.max(0.02, Math.min(0.98, pOver));
+    let over = Math.round((1/pOver) * 100) / 100;
+    let under = Math.round((1/(1-pOver)) * 100) / 100;
+    if(over < 1.01) over = 1.01;
+    if(under < 1.01) under = 1.01;
+    if(over > 25) over = 25;
+    if(under > 25) under = 25;
+    return [over, under];
+  }
 }
 
 function getBttsOdds(state){
   const [h, a] = state.score;
+  if(h > 0 && a > 0) return [1.01, 25.00];
   const min = state.minute;
   const timeLeft = Math.max(5, 90 - min);
-  if(h > 0 && a > 0) return [1.01, 15.00];
-  if(timeLeft < 15) return [8.00, 1.10];
-  const prob = 0.55 - (timeLeft / 90) * 0.05 + (min / 90) * 0.15;
-  const yesProb = Math.max(0.08, Math.min(0.85, prob));
-  return [Math.round((1/yesProb) * 100) / 100, Math.round((1/(1-yesProb)) * 100) / 100];
+  const progress = min / 90;
+  let yesProb = 0.65 - progress * 0.5;
+  if(h > 0 || a > 0) yesProb += 0.15;
+  yesProb = Math.max(0.05, Math.min(0.9, yesProb));
+  const noProb = 1 - yesProb;
+  return [Math.round((1/yesProb) * 100)/100, Math.round((1/noProb) * 100)/100];
 }
 
 function getNextGoalOdds(state){
@@ -558,21 +608,6 @@ function getExactScoreOdds(state){
     prob = Math.max(0.005, Math.min(0.99, prob));
     return { score: s, odds: Math.min(99, Math.round((1/prob) * 100) / 100) };
   });
-}
-
-function getGoalInHalfOdds(state, half){
-  const min = state.minute;
-  if(half === 1){
-    if(min >= 45) return [1.01, 15.00];
-    const timeInHalf = Math.max(0, 45 - min);
-    const prob = Math.min(0.9, Math.max(0.1, 0.5 + timeInHalf / 90));
-    return [Math.round((1/prob) * 100)/100, Math.round((1/(1-prob)) * 100)/100];
-  } else {
-    if(min >= 90) return [1.01, 15.00];
-    const timeInHalf = Math.max(0, 90 - min);
-    const prob = Math.min(0.9, Math.max(0.1, 0.5 + timeInHalf / 90));
-    return [Math.round((1/prob) * 100)/100, Math.round((1/(1-prob)) * 100)/100];
-  }
 }
 
 function getMatchStats(match, state){
@@ -761,8 +796,11 @@ function renderProfile(){
   const hist = document.getElementById('history');
   if(!betHistory.length){ hist.innerHTML = '<div style="color:#8b949e;text-align:center;padding:20px;font-size:13px">Ставок пока нет</div>'; return; }
   hist.innerHTML = betHistory.slice().reverse().map(b => {
-    const statusText = b.status === 'pending' ? '⏳ В игре' : b.status === 'win' ? '✅ Выигрыш' : '❌ Проигрыш';
-    return '<div class="history-item"><div>' + b.items.map(i => (i.market || 'Исход') + ': ' + (i.label || '') + ' ' + i.home + '—' + i.away).join(', ') + '</div><div style="color:#8b949e;font-size:11px;margin-top:4px">Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) + '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
+    const statusText = b.status === 'pending' ? '⏳ В игре'
+                     : b.status === 'win' ? '✅ Выигрыш'
+                     : b.status === 'return' ? '🔄 Возврат'
+                     : '❌ Проигрыш';
+    return '<div class="history-item"><div>' + b.items.map(i => (i.market || 'Исход') + ': ' + i.home + '—' + i.away).join(', ') + '</div><div style="color:#8b949e;font-size:11px;margin-top:4px">Ставка: ' + b.stake + ' ₽ × ' + b.totalOdds.toFixed(2) + '<span class="status ' + b.status + '">' + statusText + '</span></div></div>';
   }).join('');
 }
 
@@ -845,7 +883,7 @@ function renderMatches(){
       banner +
       '<div class="odds-row">' +
         odds.map((o,i) => o===0 ? '' :
-          '<div class="odd ' + (isSelected(m.id,i)?'selected ':'') + (lock.locked?'locked':'') + '" ' +
+          '<div class="odd ' + (isSelected(m.id,null,i)?'selected ':'') + (lock.locked?'locked':'') + '" ' +
           (lock.locked ? '' : 'onclick="event.stopPropagation();addBet(' + m.id + ',null,' + i + ',' + o + ')"') + '>' +
           '<div class="odd-label">' + labels[i] + '</div>' +
           '<div class="odd-value">' + o.toFixed(2) + '</div></div>'
@@ -856,8 +894,8 @@ function renderMatches(){
   }).join('');
 }
 
-function isSelected(matchId, outcome, marketKey){
-  if(marketKey !== undefined){
+function isSelected(matchId, marketKey, outcome){
+  if(marketKey){
     return bets.some(b => b.matchId === matchId && b.marketKey === marketKey && b.outcome === outcome);
   }
   return bets.some(b => b.matchId === matchId && !b.marketKey && b.outcome === outcome);
@@ -877,7 +915,7 @@ function addBet(matchId, market, outcome, odds, label, marketKey){
   else bets.push({ matchId, outcome, odds, label: finalLabel, home: m.home, away: m.away, market: market || 'Исход', marketKey: key });
   renderMatches();
   renderSlip();
-  if(currentSpreadMatch && currentSpreadMatch === matchId) renderSpreadBody();
+  if(currentSpreadMatch === matchId) renderSpreadBody();
 }
 
 function removeBet(i){ bets.splice(i, 1); renderMatches(); renderSlip(); if(currentSpreadMatch) renderSpreadBody(); }
@@ -957,10 +995,8 @@ function placeBet(){
   renderMatches();
   renderSlip();
   toggleSlip();
-  if(currentSpreadMatch) renderSpreadBody();
 }
 
-/* ============ МОДАЛКА РОСПИСИ ============ */
 function openSpread(matchId){
   const all = Object.values(MATCHES).flat();
   const m = all.find(x => x.id === matchId);
@@ -968,6 +1004,8 @@ function openSpread(matchId){
   currentSpreadMatch = matchId;
   currentSpreadTab = 'match';
   currentSpreadStat = false;
+  half1TotalLine = 0.5;
+  half2TotalLine = 0.5;
   document.getElementById('spreadModal').classList.add('show');
   renderSpreadHead();
   renderSpreadTabs();
@@ -1017,10 +1055,9 @@ function setSpreadTab(id){
 }
 
 function marketBtn(label, value, opts){
-  // opts: { matchId, market, outcome, odds, label, marketKey }
-  const selected = isSelected(opts.matchId, opts.outcome, opts.marketKey);
+  const selected = isSelected(opts.matchId, opts.marketKey, opts.outcome);
   const state = getMatchState(Object.values(MATCHES).flat().find(x => x.id === opts.matchId));
-  const lock = checkLock(state.match, state);
+  const lock = checkLock(state, state);
   const locked = lock.locked;
   return '<div class="market-btn ' + (selected?'selected ':'') + (locked?'locked':'') + '" ' +
     (locked ? '' : 'onclick="event.stopPropagation();marketClick(' + opts.matchId + ',\'' + (opts.market||'') + '\',' + opts.outcome + ',' + value + ',\'' + (opts.label||'') + '\',\'' + (opts.marketKey||'') + '\')"') + '>' +
@@ -1035,10 +1072,7 @@ function marketClick(matchId, market, outcome, odds, label, marketKey){
 
 function renderSpreadBody(){
   const body = document.getElementById('spreadBody');
-  if(currentSpreadStat){
-    renderStats(body);
-    return;
-  }
+  if(currentSpreadStat){ renderStats(body); return; }
   const all = Object.values(MATCHES).flat();
   const m = all.find(x => x.id === currentSpreadMatch);
   if(!m){ body.innerHTML = '<div class="no-data">Матч не найден</div>'; return; }
@@ -1051,31 +1085,20 @@ function renderSpreadBody(){
   const exact = getExactScoreOdds(state);
   let html = '';
 
-  if(lock.locked){
-    html += '<div style="background:#da3633;color:#fff;padding:12px;margin:8px 12px;border-radius:8px;text-align:center;font-weight:600;font-size:13px">' + lock.reason + '</div>';
-  }
-
-  // === ОСНОВНОЙ ИСХОД ===
-  if(currentSpreadTab === 'match' || currentSpreadTab === 'half1' || currentSpreadTab === 'half2'){
-    const showMain = currentSpreadTab === 'match';
-    if(showMain){
-      html += '<div class="market-section"><div class="market-title">Исход матча (основное время)</div>' +
-        '<div class="market-row">' +
-          marketBtn('1', mainOdds[0], { matchId:m.id, market:'Исход', outcome:0, label:'1', marketKey:'main_1' }) +
-          marketBtn('X', mainOdds[1], { matchId:m.id, market:'Исход', outcome:1, label:'X', marketKey:'main_X' }) +
-          marketBtn('2', mainOdds[2], { matchId:m.id, market:'Исход', outcome:2, label:'2', marketKey:'main_2' }) +
-        '</div>' +
-        '<div class="market-row">' +
-          marketBtn('1X', dcOdds[0], { matchId:m.id, market:'Двойной шанс', outcome:0, label:'1X', marketKey:'dc_1X' }) +
-          marketBtn('12', dcOdds[1], { matchId:m.id, market:'Двойной шанс', outcome:1, label:'12', marketKey:'dc_12' }) +
-          marketBtn('X2', dcOdds[2], { matchId:m.id, market:'Двойной шанс', outcome:2, label:'X2', marketKey:'dc_X2' }) +
-        '</div>' +
-      '</div>';
-    }
-  }
-
-  // === ТОТАЛ ===
   if(currentSpreadTab === 'match'){
+    html += '<div class="market-section"><div class="market-title">Исход матча (основное время)</div>' +
+      '<div class="market-row">' +
+        marketBtn('1', mainOdds[0], { matchId:m.id, market:'Исход', outcome:0, label:'1', marketKey:'main_1' }) +
+        marketBtn('X', mainOdds[1], { matchId:m.id, market:'Исход', outcome:1, label:'X', marketKey:'main_X' }) +
+        marketBtn('2', mainOdds[2], { matchId:m.id, market:'Исход', outcome:2, label:'2', marketKey:'main_2' }) +
+      '</div>' +
+      '<div class="market-row">' +
+        marketBtn('1X', dcOdds[0], { matchId:m.id, market:'Двойной шанс', outcome:0, label:'1X', marketKey:'dc_1X' }) +
+        marketBtn('12', dcOdds[1], { matchId:m.id, market:'Двойной шанс', outcome:1, label:'12', marketKey:'dc_12' }) +
+        marketBtn('X2', dcOdds[2], { matchId:m.id, market:'Двойной шанс', outcome:2, label:'X2', marketKey:'dc_X2' }) +
+      '</div>' +
+    '</div>';
+
     html += '<div class="market-section"><div class="market-title">Тотал голов в матче</div>';
     html += '<div class="total-selector">';
     [0.5, 1.5, 2, 2.5, 3, 3.5, 4.5].forEach(n => {
@@ -1084,33 +1107,10 @@ function renderSpreadBody(){
     html += '</div>';
     const tOdds = getTotalOdds(state, totalLine);
     html += '<div class="market-row">' +
-      marketBtn('Больше', tOdds[0], { matchId:m.id, market:'Тотал ' + totalLine, outcome:0, label:'ТБ ' + totalLine, marketKey:'total_over_' + totalLine }) +
-      marketBtn('Меньше', tOdds[1], { matchId:m.id, market:'Тотал ' + totalLine, outcome:1, label:'ТМ ' + totalLine, marketKey:'total_under_' + totalLine }) +
+      marketBtn('Больше ' + totalLine, tOdds[0], { matchId:m.id, market:'Тотал ' + totalLine, outcome:0, label:'ТБ ' + totalLine, marketKey:'total_over_' + totalLine }) +
+      marketBtn('Меньше ' + totalLine, tOdds[1], { matchId:m.id, market:'Тотал ' + totalLine, outcome:1, label:'ТМ ' + totalLine, marketKey:'total_under_' + totalLine }) +
     '</div></div>';
-  }
 
-  if(currentSpreadTab === 'half1'){
-    const halfOdds = getGoalInHalfOdds(state, 1);
-    html += '<div class="market-section"><div class="market-title">Тотал голов в 1-м тайме</div>' +
-      '<div class="market-row">' +
-        marketBtn('Больше 0.5', halfOdds[0], { matchId:m.id, market:'Тотал 1-й тайм 0.5', outcome:0, label:'ТБ 0.5 1Т', marketKey:'h1_over_05' }) +
-        marketBtn('Меньше 0.5', halfOdds[1], { matchId:m.id, market:'Тотал 1-й тайм 0.5', outcome:1, label:'ТМ 0.5 1Т', marketKey:'h1_under_05' }) +
-      '</div>' +
-    '</div>';
-  }
-
-  if(currentSpreadTab === 'half2'){
-    const halfOdds = getGoalInHalfOdds(state, 2);
-    html += '<div class="market-section"><div class="market-title">Тотал голов во 2-м тайме</div>' +
-      '<div class="market-row">' +
-        marketBtn('Больше 0.5', halfOdds[0], { matchId:m.id, market:'Тотал 2-й тайм 0.5', outcome:0, label:'ТБ 0.5 2Т', marketKey:'h2_over_05' }) +
-        marketBtn('Меньше 0.5', halfOdds[1], { matchId:m.id, market:'Тотал 2-й тайм 0.5', outcome:1, label:'ТМ 0.5 2Т', marketKey:'h2_under_05' }) +
-      '</div>' +
-    '</div>';
-  }
-
-  // === ОБЕ ЗАБЬЮТ ===
-  if(currentSpreadTab === 'match'){
     html += '<div class="market-section"><div class="market-title">Обе команды забьют</div>' +
       '<div class="market-row">' +
         marketBtn('Да', btts[0], { matchId:m.id, market:'Обе забьют', outcome:0, label:'Да', marketKey:'btts_yes' }) +
@@ -1125,27 +1125,66 @@ function renderSpreadBody(){
         marketBtn(m.away, nextGoal[2], { matchId:m.id, market:'Следующий гол', outcome:2, label:m.away, marketKey:'next_2' }) +
       '</div>' +
     '</div>';
-  }
 
-  // === ТОЧНЫЙ СЧЁТ ===
-  if(currentSpreadTab === 'match'){
     html += '<div class="market-section"><div class="market-title">Точный счёт</div><div class="score-grid">';
     exact.forEach(e => {
-      html += '<div class="score-cell ' + (isSelected(m.id, e.score, 'exact_' + e.score)?'selected':'') + '" onclick="event.stopPropagation();marketClick(' + m.id + ',\'Точный счёт\',\'' + e.score + '\',' + e.odds + ',\'' + e.score + '\',\'exact_' + e.score + '\')">' +
+      html += '<div class="score-cell ' + (isSelected(m.id, 'exact_' + e.score, e.score)?'selected':'') + '" onclick="event.stopPropagation();marketClick(' + m.id + ',\'Точный счёт\',\'' + e.score + '\',' + e.odds + ',\'' + e.score + '\',\'exact_' + e.score + '\')">' +
         '<div class="scl">' + e.score + '</div><div class="scv">' + e.odds.toFixed(2) + '</div></div>';
     });
     html += '</div></div>';
   }
 
+  if(currentSpreadTab === 'half1'){
+    if(state.phase !== 'first'){
+      html += '<div class="no-data">⏸ 1-й тайм завершён<br><br>Ставки откроются в следующем матче</div>';
+    } else {
+      html += '<div class="market-section"><div class="market-title">Тотал голов в 1-м тайме</div>';
+      html += '<div class="total-selector">';
+      [0.5, 1.5, 2.5, 3.5].forEach(n => {
+        html += '<button class="total-num ' + (half1TotalLine===n?'active':'') + '" onclick="setHalf1Total(' + n + ')">' + n + '</button>';
+      });
+      html += '</div>';
+      const h1 = getHalfTotalOdds(state, 1, half1TotalLine);
+      if(h1){
+        html += '<div class="market-row">' +
+          marketBtn('Больше ' + half1TotalLine, h1[0], { matchId:m.id, market:'Тотал 1Т ' + half1TotalLine, outcome:0, label:'ТБ ' + half1TotalLine + ' 1Т', marketKey:'h1_over_' + half1TotalLine }) +
+          marketBtn('Меньше ' + half1TotalLine, h1[1], { matchId:m.id, market:'Тотал 1Т ' + half1TotalLine, outcome:1, label:'ТМ ' + half1TotalLine + ' 1Т', marketKey:'h1_under_' + half1TotalLine }) +
+        '</div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  if(currentSpreadTab === 'half2'){
+    if(state.phase === 'first' || state.phase === 'break'){
+      html += '<div class="no-data">⏸ 2-й тайм ещё не начался<br><br>Ставки откроются после перерыва</div>';
+    } else if(state.phase === 'after'){
+      html += '<div class="no-data">⏸ Матч завершён<br><br>Ставки откроются в следующем матче</div>';
+    } else {
+      html += '<div class="market-section"><div class="market-title">Тотал голов во 2-м тайме</div>';
+      html += '<div class="total-selector">';
+      [0.5, 1.5, 2.5, 3.5].forEach(n => {
+        html += '<button class="total-num ' + (half2TotalLine===n?'active':'') + '" onclick="setHalf2Total(' + n + ')">' + n + '</button>';
+      });
+      html += '</div>';
+      const h2 = getHalfTotalOdds(state, 2, half2TotalLine);
+      if(h2 && Array.isArray(h2)){
+        html += '<div class="market-row">' +
+          marketBtn('Больше ' + half2TotalLine, h2[0], { matchId:m.id, market:'Тотал 2Т ' + half2TotalLine, outcome:0, label:'ТБ ' + half2TotalLine + ' 2Т', marketKey:'h2_over_' + half2TotalLine }) +
+          marketBtn('Меньше ' + half2TotalLine, h2[1], { matchId:m.id, market:'Тотал 2Т ' + half2TotalLine, outcome:1, label:'ТМ ' + half2TotalLine + ' 2Т', marketKey:'h2_under_' + half2TotalLine }) +
+        '</div>';
+      }
+      html += '</div>';
+    }
+  }
+
   body.innerHTML = html;
 }
 
-function setTotal(n){
-  totalLine = n;
-  renderSpreadBody();
-}
+function setTotal(n){ totalLine = n; renderSpreadBody(); }
+function setHalf1Total(n){ half1TotalLine = n; renderSpreadBody(); }
+function setHalf2Total(n){ half2TotalLine = n; renderSpreadBody(); }
 
-/* ============ СТАТИСТИКА ============ */
 function renderStats(container){
   const all = Object.values(MATCHES).flat();
   const m = all.find(x => x.id === currentSpreadMatch);
@@ -1170,7 +1209,6 @@ function renderStats(container){
   '</div>';
 }
 
-/* ============ ПРОВЕРКА СТАВОК ============ */
 function checkBetResults(){
   if(!currentUser) return;
   let changed = false;
@@ -1178,6 +1216,7 @@ function checkBetResults(){
     if(bet.status !== 'pending') return;
     let allFinished = true;
     let allWon = true;
+    let anyReturn = false;
     for(const item of bet.items){
       const all = Object.values(MATCHES).flat();
       const m = all.find(x => x.id === item.matchId);
@@ -1192,45 +1231,115 @@ function checkBetResults(){
         finalScore = [h, a];
       } else { allFinished = false; break; }
       const [h, a] = finalScore;
+      const total = h + a;
       let won = false;
-      if(item.marketKey && item.marketKey.startsWith('main_')){
+      let isReturn = false;
+      const mk = item.marketKey || '';
+      if(mk.startsWith('main_')){
         let outcome; if(h > a) outcome = 0; else if(h === a) outcome = 1; else outcome = 2;
         won = (outcome === item.outcome);
-      } else if(item.marketKey === 'dc_1X'){ won = (h >= a); }
-      else if(item.marketKey === 'dc_12'){ won = (h !== a); }
-      else if(item.marketKey === 'dc_X2'){ won = (h <= a); }
-      else if(item.marketKey && item.marketKey.startsWith('total_over_')){
-        const line = parseFloat(item.marketKey.replace('total_over_',''));
-        won = (h + a > line);
-      } else if(item.marketKey && item.marketKey.startsWith('total_under_')){
-        const line = parseFloat(item.marketKey.replace('total_under_',''));
-        won = (h + a < line);
-      } else if(item.marketKey === 'btts_yes'){ won = (h > 0 && a > 0); }
-      else if(item.marketKey === 'btts_no'){ won = !(h > 0 && a > 0); }
-      else if(item.marketKey && item.marketKey.startsWith('next_')){
-        // Следующий гол — уже сложно, считаем выигрышем если событие было
-        won = true; // упрощённо
-      } else if(item.marketKey && item.marketKey.startsWith('exact_')){
-        const sc = item.marketKey.replace('exact_','');
+      } else if(mk === 'dc_1X'){ won = (h >= a); }
+      else if(mk === 'dc_12'){ won = (h !== a); }
+      else if(mk === 'dc_X2'){ won = (h <= a); }
+      else if(mk.startsWith('total_over_')){
+        const line = parseFloat(mk.replace('total_over_',''));
+        if(total > line) won = true;
+        else if(total === line) isReturn = true;
+        else won = false;
+      } else if(mk.startsWith('total_under_')){
+        const line = parseFloat(mk.replace('total_under_',''));
+        if(total < line) won = true;
+        else if(total === line) isReturn = true;
+        else won = false;
+      } else if(mk === 'btts_yes'){ won = (h > 0 && a > 0); }
+      else if(mk === 'btts_no'){ won = !(h > 0 && a > 0); }
+      else if(mk.startsWith('next_')){ won = true; }
+      else if(mk.startsWith('exact_')){
+        const sc = mk.replace('exact_','');
         won = (sc === h + ':' + a);
-      } else if(item.marketKey && item.marketKey.startsWith('h1_')){
-        won = true; // упрощённо
-      } else if(item.marketKey && item.marketKey.startsWith('h2_')){
-        won = true;
+      } else if(mk.startsWith('h1_over_')){
+        const line = parseFloat(mk.replace('h1_over_',''));
+        const sc = generateMatchScenario(m, item.cycleIndex);
+        const endH1 = 45 + sc.injury1;
+        const g1 = sc.goals.filter(g => g[1] <= endH1).length;
+        if(g1 > line) won = true; else if(g1 === line) isReturn = true; else won = false;
+      } else if(mk.startsWith('h1_under_')){
+        const line = parseFloat(mk.replace('h1_under_',''));
+        const sc = generateMatchScenario(m, item.cycleIndex);
+        const endH1 = 45 + sc.injury1;
+        const g1 = sc.goals.filter(g => g[1] <= endH1).length;
+        if(g1 < line) won = true; else if(g1 === line) isReturn = true; else won = false;
+      } else if(mk.startsWith('h2_over_')){
+        const line = parseFloat(mk.replace('h2_over_',''));
+        const sc = generateMatchScenario(m, item.cycleIndex);
+        const g2 = sc.goals.filter(g => g[1] > 45).length;
+        if(g2 > line) won = true; else if(g2 === line) isReturn = true; else won = false;
+      } else if(mk.startsWith('h2_under_')){
+        const line = parseFloat(mk.replace('h2_under_',''));
+        const sc = generateMatchScenario(m, item.cycleIndex);
+        const g2 = sc.goals.filter(g => g[1] > 45).length;
+        if(g2 < line) won = true; else if(g2 === line) isReturn = true; else won = false;
       } else {
         let outcome; if(h > a) outcome = 0; else if(h === a) outcome = 1; else outcome = 2;
         won = (outcome === item.outcome);
       }
-      if(!won) allWon = false;
+      if(isReturn) anyReturn = true;
+      if(!won && !isReturn) allWon = false;
     }
     if(allFinished){
-      bet.status = allWon ? 'win' : 'lose';
-      if(allWon){
+      if(anyReturn && !allWon){
+        bet.status = 'lose';
+        showToast('😔 Ставка не сыграла', false);
+      } else if(anyReturn && allWon){
+        let totalOddsWithReturn = 1;
+        for(const item of bet.items){
+          const all = Object.values(MATCHES).flat();
+          const m = all.find(x => x.id === item.matchId);
+          if(!m) continue;
+          const sc = generateMatchScenario(m, item.cycleIndex);
+          const mk = item.marketKey || '';
+          let returnThis = false;
+          let h = 0, a = 0;
+          sc.goals.forEach(g => { if(g[0]===0) h++; else a++; });
+          if(mk.startsWith('total_over_')){
+            const line = parseFloat(mk.replace('total_over_',''));
+            if(h + a === line) returnThis = true;
+          } else if(mk.startsWith('total_under_')){
+            const line = parseFloat(mk.replace('total_under_',''));
+            if(h + a === line) returnThis = true;
+          } else if(mk.startsWith('h1_over_') || mk.startsWith('h1_under_')){
+            const line = parseFloat(mk.split('_').pop());
+            const endH1 = 45 + sc.injury1;
+            const g1 = sc.goals.filter(g => g[1] <= endH1).length;
+            if(g1 === line) returnThis = true;
+          } else if(mk.startsWith('h2_over_') || mk.startsWith('h2_under_')){
+            const line = parseFloat(mk.split('_').pop());
+            const g2 = sc.goals.filter(g => g[1] > 45).length;
+            if(g2 === line) returnThis = true;
+          }
+          totalOddsWithReturn *= (returnThis ? 1.00 : item.odds);
+        }
+        const actualWin = bet.stake * totalOddsWithReturn;
+        bet.potentialWin = actualWin;
+        balance += actualWin;
+        DB[currentUser].balance = balance;
+        updateBalanceUI();
+        showToast('🔄 ЧАСТИЧНЫЙ ВОЗВРАТ! +' + actualWin.toFixed(0) + ' ₽', true);
+        bet.status = 'win';
+      } else if(anyReturn){
+        balance += bet.stake;
+        DB[currentUser].balance = balance;
+        updateBalanceUI();
+        showToast('🔄 ВОЗВРАТ ставки: +' + bet.stake + ' ₽', true);
+        bet.status = 'return';
+      } else if(allWon){
+        bet.status = 'win';
         balance += bet.potentialWin;
         DB[currentUser].balance = balance;
         updateBalanceUI();
         showToast('🎉 ВЫИГРЫШ! +' + bet.potentialWin.toFixed(0) + ' ₽', true);
       } else {
+        bet.status = 'lose';
         showToast('😔 Ставка не сыграла', false);
       }
       changed = true;
