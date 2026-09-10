@@ -32,6 +32,8 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .right-head{display:flex;gap:8px;align-items:center}
 .balance{background:linear-gradient(135deg,#238636,#2ea043);padding:8px 14px;border-radius:20px;font-weight:700;font-size:14px;cursor:pointer}
 .balance:active{transform:scale(.95)}
+.freebet-badge{background:linear-gradient(135deg,#ffcc00,#ff9500);color:#000;padding:8px 12px;border-radius:20px;font-weight:700;font-size:13px;cursor:pointer;display:none}
+.freebet-badge.show{display:block}
 .tabs{display:flex;gap:8px;padding:12px 16px;overflow-x:auto;background:#161b22;border-bottom:1px solid #30363d;scrollbar-width:none;position:sticky;top:57px;z-index:9}
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:8px 16px;background:#21262d;border:none;border-radius:20px;color:#8b949e;font-weight:600;white-space:nowrap;cursor:pointer;font-size:14px;transition:.2s}
@@ -70,6 +72,8 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .input-row input:focus{border-color:#ffcc00}
 .quick-btn{padding:12px 14px;background:#21262d;border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;font-size:13px}
 .quick-btn:active{background:#30363d}
+.use-freebet{background:#ffcc00;color:#000;border:none;padding:10px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;width:100%;margin-bottom:8px;display:none}
+.use-freebet.show{display:block}
 .payout{background:#0d1117;padding:14px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
 .payout strong{color:#ffcc00;font-size:20px}
 .profile{padding:16px}
@@ -90,6 +94,39 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 .nav-item{flex:1;background:none;border:none;color:#8b949e;font-size:11px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px}
 .nav-item.active{color:#ffcc00}
 .nav-item .icon{font-size:20px}
+
+/* РУЛЕТКА */
+.roulette-wrap{padding:20px 16px;text-align:center}
+.roulette-title{font-size:24px;font-weight:900;margin-bottom:8px}
+.roulette-subtitle{color:#8b949e;font-size:14px;margin-bottom:24px}
+.wheel-container{position:relative;width:280px;height:280px;margin:0 auto 24px;filter:drop-shadow(0 0 30px rgba(255,204,0,.4))}
+.wheel{width:100%;height:100%;border-radius:50%;position:relative;transition:transform 5s cubic-bezier(.17,.67,.15,1);background:conic-gradient(
+  #ffcc00 0deg 60deg,
+  #238636 60deg 120deg,
+  #f85149 120deg 180deg,
+  #58a6ff 180deg 240deg,
+  #a371f7 240deg 300deg,
+  #ff9500 300deg 360deg
+);border:6px solid #161b22}
+.wheel::after{content:'';position:absolute;top:50%;left:50%;width:80px;height:80px;background:#161b22;border-radius:50%;transform:translate(-50%,-50%);border:4px solid #ffcc00}
+.wheel-arrow{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:30px solid #ffcc00;z-index:10;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5))}
+.wheel-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:32px;z-index:5;pointer-events:none}
+.spin-btn{padding:16px 40px;background:linear-gradient(135deg,#ffcc00,#ff9500);color:#000;border:none;border-radius:30px;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 6px 24px rgba(255,204,0,.4);margin-bottom:12px}
+.spin-btn:active{transform:scale(.96)}
+.spin-btn:disabled{opacity:.4;cursor:not-allowed;background:#30363d;color:#8b949e;box-shadow:none}
+.cooldown{color:#8b949e;font-size:14px;margin-top:8px}
+.prizes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:24px}
+.prize-cell{background:#161b22;padding:10px;border-radius:10px;text-align:center;border:1px solid #30363d}
+.prize-cell .sum{font-weight:900;font-size:14px;color:#ffcc00}
+.prize-cell .label{font-size:10px;color:#8b949e;margin-top:2px}
+.result-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;justify-content:center;align-items:center;z-index:2000;padding:20px}
+.result-modal.show{display:flex}
+.result-box{background:#161b22;border-radius:20px;padding:32px 24px;max-width:340px;width:100%;text-align:center;border:2px solid #ffcc00;animation:pop .4s}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.result-box h2{font-size:26px;margin-bottom:12px}
+.result-box .amount{font-size:48px;font-weight:900;color:#ffcc00;margin:16px 0;text-shadow:0 0 30px rgba(255,204,0,.6)}
+.result-box p{color:#8b949e;font-size:14px;margin-bottom:20px}
+.result-box .emoji{font-size:64px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -114,6 +151,7 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
   <div class="header">
     <div class="logo">BET<span>APP</span></div>
     <div class="right-head">
+      <div class="freebet-badge" id="freebetBadge" onclick="showPage('roulette')">🎁 <span id="freebetAmount">0</span></div>
       <div class="balance" id="balance" onclick="showDeposit()">💰 10 000 ₽</div>
     </div>
   </div>
@@ -123,12 +161,38 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
     <div id="matches"></div>
   </div>
 
+  <div id="pageRoulette" style="display:none">
+    <div class="roulette-wrap">
+      <div class="roulette-title">🎰 Колесо Фортуны</div>
+      <div class="roulette-subtitle">Крути раз в неделю • Приз от 500 до 15 000 ₽</div>
+
+      <div class="wheel-container">
+        <div class="wheel-arrow"></div>
+        <div class="wheel" id="wheel"></div>
+        <div class="wheel-center">🎁</div>
+      </div>
+
+      <button class="spin-btn" id="spinBtn" onclick="spinWheel()">КРУТИТЬ 🎰</button>
+      <div class="cooldown" id="cooldown"></div>
+
+      <div class="prizes-grid">
+        <div class="prize-cell"><div class="sum">500 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">1 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">2 500 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">5 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">10 000 ₽</div><div class="label">Фрибет</div></div>
+        <div class="prize-cell"><div class="sum">15 000 ₽</div><div class="label">ДЖЕКПОТ</div></div>
+      </div>
+    </div>
+  </div>
+
   <div id="pageProfile" style="display:none">
     <div class="profile">
       <div class="card">
         <h3>👤 Профиль</h3>
         <div class="row"><span>Логин</span><span id="pName">—</span></div>
         <div class="row"><span>Баланс</span><span id="pBalance">—</span></div>
+        <div class="row"><span>Фрибеты</span><span id="pFreebet">0 ₽</span></div>
         <div class="row"><span>Всего ставок</span><span id="pBets">0</span></div>
         <div class="row"><span>Выигрышей</span><span id="pWins">0</span></div>
         <div class="row"><span>В игре</span><span id="pInPlay">0 ₽</span></div>
@@ -156,6 +220,7 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
     <button class="close-btn" onclick="toggleSlip()">✕</button>
   </div>
   <div id="slipItems"></div>
+  <button class="use-freebet" id="useFreebetBtn" onclick="toggleFreebet()">🎁 Использовать фрибет</button>
   <div class="input-row">
     <input id="stakeInput" type="number" value="100" min="10">
     <button class="quick-btn" onclick="setStake(100)">100</button>
@@ -173,9 +238,22 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
   <button class="nav-item active" onclick="showPage('bets')" id="navBets">
     <span class="icon">⚽</span>Линия
   </button>
+  <button class="nav-item" onclick="showPage('roulette')" id="navRoulette">
+    <span class="icon">🎰</span>Рулетка
+  </button>
   <button class="nav-item" onclick="showPage('profile')" id="navProfile">
     <span class="icon">👤</span>Профиль
   </button>
+</div>
+
+<div class="result-modal" id="resultModal">
+  <div class="result-box">
+    <div class="emoji" id="resultEmoji">🎉</div>
+    <h2 id="resultTitle">Поздравляем!</h2>
+    <div class="amount" id="resultAmount">0 ₽</div>
+    <p id="resultText">Фрибет зачислен на ваш счёт</p>
+    <button class="btn-primary" onclick="closeResult()">Забрать 🎁</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -184,12 +262,17 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
 let DB = {};
 let currentUser = null;
 let balance = 0;
+let freebet = 0;
 let bets = [];
 let betHistory = [];
 let selectedSport = '⚽ Футбол';
 let authMode = 'login';
+let useFreebet = false;
 
 const DAILY_LIMIT = 1500000;
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+const PRIZES = [500, 1000, 2500, 5000, 10000, 15000];
 
 try {
   DB = JSON.parse(localStorage.getItem('betapp_users') || '{}');
@@ -292,9 +375,11 @@ function submitAuth(){
     DB[login] = {
       pass: pass,
       balance: 10000,
+      freebet: 0,
       history: [],
       depositToday: 0,
       depositDate: getTodayKey(),
+      lastSpin: 0,
       createdAt: Date.now()
     };
     saveDB();
@@ -308,6 +393,7 @@ function submitAuth(){
 
   currentUser = login;
   balance = DB[login].balance;
+  freebet = DB[login].freebet || 0;
   betHistory = DB[login].history || [];
   saveCurrent();
   enterApp();
@@ -318,6 +404,7 @@ function enterApp(){
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('bottomNav').style.display = 'flex';
   updateBalanceUI();
+  updateFreebetUI();
   renderTabs();
   renderMatches();
   showPage('bets');
@@ -327,6 +414,7 @@ function enterApp(){
 function logout(){
   if(!confirm('Выйти из аккаунта?')) return;
   DB[currentUser].balance = balance;
+  DB[currentUser].freebet = freebet;
   DB[currentUser].history = betHistory;
   saveDB();
   currentUser = null;
@@ -337,6 +425,19 @@ function logout(){
 function updateBalanceUI(){
   const el = document.getElementById('balance');
   if(el) el.textContent = '💰 ' + balance.toLocaleString('ru-RU') + ' ₽';
+}
+
+function updateFreebetUI(){
+  const badge = document.getElementById('freebetBadge');
+  const amount = document.getElementById('freebetAmount');
+  if(freebet > 0){
+    badge.classList.add('show');
+    amount.textContent = freebet.toLocaleString('ru-RU') + ' ₽';
+  } else {
+    badge.classList.remove('show');
+  }
+  const btn = document.getElementById('useFreebetBtn');
+  if(btn) btn.classList.toggle('show', freebet > 0 && bets.length > 0);
 }
 
 function showDeposit(){
@@ -375,15 +476,19 @@ function showDeposit(){
 
 function showPage(page){
   document.getElementById('pageBets').style.display = page==='bets' ? 'block' : 'none';
+  document.getElementById('pageRoulette').style.display = page==='roulette' ? 'block' : 'none';
   document.getElementById('pageProfile').style.display = page==='profile' ? 'block' : 'none';
   document.getElementById('navBets').classList.toggle('active', page==='bets');
+  document.getElementById('navRoulette').classList.toggle('active', page==='roulette');
   document.getElementById('navProfile').classList.toggle('active', page==='profile');
   if(page === 'profile') renderProfile();
+  if(page === 'roulette') renderRoulette();
 }
 
 function renderProfile(){
   document.getElementById('pName').textContent = currentUser;
   document.getElementById('pBalance').textContent = balance.toLocaleString('ru-RU') + ' ₽';
+  document.getElementById('pFreebet').textContent = freebet.toLocaleString('ru-RU') + ' ₽';
   document.getElementById('pBets').textContent = betHistory.length;
   const wins = betHistory.filter(b => b.status === 'win').length;
   document.getElementById('pWins').textContent = wins;
@@ -413,6 +518,97 @@ function renderProfile(){
   }).join('');
 }
 
+/* ============ РУЛЕТКА ============ */
+function renderRoulette(){
+  const lastSpin = DB[currentUser].lastSpin || 0;
+  const nextSpin = lastSpin + WEEK_MS;
+  const now = Date.now();
+  const btn = document.getElementById('spinBtn');
+  const cd = document.getElementById('cooldown');
+
+  if(now >= nextSpin){
+    btn.disabled = false;
+    btn.textContent = 'КРУТИТЬ 🎰';
+    cd.textContent = 'Доступно прямо сейчас!';
+    cd.style.color = '#238636';
+  } else {
+    btn.disabled = true;
+    btn.textContent = '⏳ Недоступно';
+    const left = nextSpin - now;
+    const days = Math.floor(left / (24*60*60*1000));
+    const hours = Math.floor((left % (24*60*60*1000)) / (60*60*1000));
+    const mins = Math.floor((left % (60*60*1000)) / (60*1000));
+    cd.textContent = 'Следующая попытка через ' + days + 'д ' + hours + 'ч ' + mins + 'м';
+    cd.style.color = '#8b949e';
+  }
+}
+
+function spinWheel(){
+  const lastSpin = DB[currentUser].lastSpin || 0;
+  const nextSpin = lastSpin + WEEK_MS;
+  if(Date.now() < nextSpin){
+    return showToast('⏳ Ещё рано, братан!', false);
+  }
+
+  const btn = document.getElementById('spinBtn');
+  btn.disabled = true;
+  btn.textContent = 'Крутится...';
+
+  // Выбираем случайный приз
+  const prizeIndex = Math.floor(Math.random() * PRIZES.length);
+  const prize = PRIZES[prizeIndex];
+
+  // Угол: 6 секторов по 60°. Крутим 5 оборотов + попадаем в нужный сектор
+  const sectorAngle = 60;
+  const targetAngle = 360 * 5 + (360 - prizeIndex * sectorAngle - sectorAngle / 2);
+
+  const wheel = document.getElementById('wheel');
+  wheel.style.transform = 'rotate(' + targetAngle + 'deg)';
+
+  setTimeout(() => {
+    // Начисляем фрибет
+    freebet += prize;
+    DB[currentUser].freebet = freebet;
+    DB[currentUser].lastSpin = Date.now();
+    saveDB();
+    updateFreebetUI();
+
+    // Показываем модалку
+    document.getElementById('resultAmount').textContent = '+' + prize.toLocaleString('ru-RU') + ' ₽';
+    if(prize === 15000){
+      document.getElementById('resultEmoji').textContent = '👑';
+      document.getElementById('resultTitle').textContent = 'ДЖЕКПОТ!';
+      document.getElementById('resultText').textContent = 'Невероятная удача! Фрибет зачислен';
+    } else if(prize >= 5000){
+      document.getElementById('resultEmoji').textContent = '🔥';
+      document.getElementById('resultTitle').textContent = 'Крупный приз!';
+      document.getElementById('resultText').textContent = 'Фрибет зачислен на ваш счёт';
+    } else {
+      document.getElementById('resultEmoji').textContent = '🎉';
+      document.getElementById('resultTitle').textContent = 'Поздравляем!';
+      document.getElementById('resultText').textContent = 'Фрибет зачислен на ваш счёт';
+    }
+    document.getElementById('resultModal').classList.add('show');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Недоступно';
+    renderRoulette();
+  }, 5200);
+}
+
+function closeResult(){
+  document.getElementById('resultModal').classList.remove('show');
+  // Сброс колеса
+  setTimeout(() => {
+    document.getElementById('wheel').style.transition = 'none';
+    document.getElementById('wheel').style.transform = 'rotate(0deg)';
+    setTimeout(() => {
+      document.getElementById('wheel').style.transition = 'transform 5s cubic-bezier(.17,.67,.15,1)';
+    }, 50);
+  }, 300);
+}
+
+/* ============ СТАВКИ ============ */
 function renderTabs(){
   document.getElementById('tabs').innerHTML = SPORTS.map(s =>
     '<button class="tab ' + (s===selectedSport?'active':'') +
@@ -489,14 +685,39 @@ function renderSlip(){
         '<div class="m">' + b.label + ' <span class="o">@ ' + b.odds.toFixed(2) + '</span></div></div>'
       ).join('')
     : '<div style="color:#8b949e;text-align:center;padding:20px">Купон пуст</div>';
+  updateFreebetUI();
+  updatePayout();
+}
+
+function toggleFreebet(){
+  if(freebet <= 0){
+    return showToast('У вас нет фрибетов', false);
+  }
+  useFreebet = !useFreebet;
+  const btn = document.getElementById('useFreebetBtn');
+  if(useFreebet){
+    btn.textContent = '✅ Фрибет применяется';
+    btn.style.background = '#238636';
+    btn.style.color = '#fff';
+  } else {
+    btn.textContent = '🎁 Использовать фрибет (' + freebet.toLocaleString('ru-RU') + ' ₽)';
+    btn.style.background = '#ffcc00';
+    btn.style.color = '#000';
+  }
   updatePayout();
 }
 
 function updatePayout(){
   const stake = Number(document.getElementById('stakeInput').value) || 0;
   const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
-  document.getElementById('payout').textContent =
-    (stake * (bets.length ? totalOdds : 0)).toFixed(0) + ' ₽';
+  const realStake = useFreebet ? Math.min(stake, freebet) : 0;
+  const realMoney = stake - realStake;
+  const win = stake * (bets.length ? totalOdds : 0);
+  let text = win.toFixed(0) + ' ₽';
+  if(useFreebet && realStake > 0){
+    text += ' (' + realStake + '₽ фрибет)';
+  }
+  document.getElementById('payout').textContent = text;
 }
 
 document.getElementById('stakeInput').addEventListener('input', updatePayout);
@@ -514,17 +735,28 @@ function placeBet(){
   if(!bets.length) return showToast('Купон пуст', false);
   const stake = Number(document.getElementById('stakeInput').value) || 0;
   if(stake < 10) return showToast('Мин. ставка 10 ₽', false);
-  if(stake > balance) return showToast('Недостаточно средств', false);
+
+  let realMoneyStake = stake;
+  let freebetUsed = 0;
+
+  if(useFreebet && freebet > 0){
+    freebetUsed = Math.min(stake, freebet);
+    realMoneyStake = stake - freebetUsed;
+  }
+
+  if(realMoneyStake > balance) return showToast('Недостаточно средств', false);
 
   const totalOdds = bets.reduce((a,b) => a*b.odds, 1);
   const potentialWin = stake * totalOdds;
 
-  balance -= stake;
+  balance -= realMoneyStake;
+  freebet -= freebetUsed;
 
   const record = {
     id: Date.now(),
     items: [...bets],
     stake: stake,
+    freebetUsed: freebetUsed,
     totalOdds: totalOdds,
     potentialWin: potentialWin,
     status: 'pending',
@@ -532,9 +764,18 @@ function placeBet(){
   };
   betHistory.push(record);
   DB[currentUser].balance = balance;
+  DB[currentUser].freebet = freebet;
   DB[currentUser].history = betHistory;
   saveDB();
   updateBalanceUI();
+  updateFreebetUI();
+
+  // Сбрасываем фрибет-режим
+  useFreebet = false;
+  const fbBtn = document.getElementById('useFreebetBtn');
+  fbBtn.textContent = '🎁 Использовать фрибет';
+  fbBtn.style.background = '#ffcc00';
+  fbBtn.style.color = '#000';
 
   const delay = 3000 + Math.random() * 5000;
   setTimeout(() => {
@@ -553,14 +794,17 @@ function placeBet(){
     if(document.getElementById('pageProfile').style.display !== 'none') renderProfile();
   }, delay);
 
-  showToast('✅ Ставка ' + stake + ' ₽ принята! Потенциал: ' + potentialWin.toFixed(0) + ' ₽');
+  let msg = '✅ Ставка ' + stake + ' ₽';
+  if(freebetUsed > 0) msg += ' (фрибет ' + freebetUsed + ' ₽)';
+  showToast(msg + ' | Потенциал: ' + potentialWin.toFixed(0) + ' ₽');
+
   bets = [];
   renderMatches();
   renderSlip();
   toggleSlip();
 }
 
-// Обновление коэффициентов каждые 5 секунд
+// Обновление коэффициентов
 setInterval(() => {
   if(!currentUser) return;
   Object.keys(MATCHES).forEach(sport => {
@@ -585,7 +829,7 @@ setInterval(() => {
   renderSlip();
 }, 5000);
 
-// LIVE-СИМУЛЯЦИЯ каждые 8 секунд
+// LIVE-симуляция
 setInterval(() => {
   if(!currentUser) return;
   let changed = false;
@@ -610,13 +854,8 @@ setInterval(() => {
 
       if(Math.random() < 0.05 && m.score){
         const parts = m.score.split(':').map(Number);
-        if(sport === '🎾 Теннис'){
-          if(Math.random() < 0.5) parts[0]++;
-          else parts[1]++;
-        } else {
-          if(Math.random() < 0.5) parts[0]++;
-          else parts[1]++;
-        }
+        if(Math.random() < 0.5) parts[0]++;
+        else parts[1]++;
         m.score = parts.join(':');
         changed = true;
         showToast('⚽ ГОЛ! ' + m.home + ' ' + m.score + ' ' + m.away, true);
@@ -626,6 +865,13 @@ setInterval(() => {
 
   if(changed) renderMatches();
 }, 8000);
+
+// Обновление кулдауна рулетки каждую минуту
+setInterval(() => {
+  if(currentUser && document.getElementById('pageRoulette').style.display !== 'none'){
+    renderRoulette();
+  }
+}, 60000);
 
 let toastTimer;
 function showToast(text, ok = true){
@@ -639,6 +885,7 @@ function showToast(text, ok = true){
 
 if(currentUser && DB[currentUser]){
   balance = DB[currentUser].balance;
+  freebet = DB[currentUser].freebet || 0;
   betHistory = DB[currentUser].history || [];
   enterApp();
 }
