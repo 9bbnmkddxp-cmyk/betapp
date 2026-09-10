@@ -132,6 +132,7 @@ body{background:#0d1117;color:#fff;min-height:100vh;overflow-x:hidden}
         <div class="row"><span>Всего ставок</span><span id="pBets">0</span></div>
         <div class="row"><span>Выигрышей</span><span id="pWins">0</span></div>
         <div class="row"><span>В игре</span><span id="pInPlay">0 ₽</span></div>
+        <div class="row"><span>Лимит пополнения на сегодня</span><span id="pLimit">—</span></div>
         <button class="deposit-btn-big" onclick="showDeposit()">💳 Пополнить баланс</button>
       </div>
 
@@ -188,6 +189,8 @@ let betHistory = [];
 let selectedSport = '⚽ Футбол';
 let authMode = 'login';
 
+const DAILY_LIMIT = 1500000;
+
 try {
   DB = JSON.parse(localStorage.getItem('betapp_users') || '{}');
   currentUser = localStorage.getItem('betapp_current');
@@ -207,27 +210,54 @@ const SPORTS = ['⚽ Футбол','🎾 Теннис','🏒 Хоккей','🏀
 
 let MATCHES = {
   '⚽ Футбол': [
-    { id:1, league:'АПЛ', home:'Ман Сити', away:'Ливерпуль', time:'20:00', live:false, odds:[2.15,3.40,3.20] },
-    { id:2, league:'Ла Лига', home:'Реал', away:'Барселона', time:"67'", live:true, score:'2:1', odds:[1.95,3.60,3.80] },
-    { id:3, league:'Серия А', home:'Ювентус', away:'Интер', time:'21:45', live:false, odds:[2.80,3.10,2.60] },
-    { id:4, league:'Бундеслига', home:'Бавария', away:'Боруссия Д', time:'19:30', live:false, odds:[1.65,4.20,4.50] },
+    { id:1, league:'🏆 Лига Чемпионов', home:'Фенербахче', away:'Рома', time:"45'", live:true, score:'0:0', odds:[3.55,3.30,2.13] },
+    { id:2, league:'🏆 Лига Чемпионов', home:'ПСВ', away:'Шахтёр Донецк', time:"45'", live:true, score:'0:0', odds:[1.60,4.30,5.00] },
+    { id:3, league:'🏆 Лига Чемпионов', home:'Бавария', away:'МЮ', time:'22:00', live:false, odds:[1.07,12.50,33.00] },
+    { id:4, league:'🏆 Лига Чемпионов', home:'Славия Прага', away:'Ланс', time:'22:00', live:false, odds:[2.65,3.60,2.55] },
+    { id:5, league:'🏆 Лига Чемпионов', home:'Ман Сити', away:'Арсенал', time:'22:00', live:false, odds:[1.85,3.80,3.60] },
+    { id:6, league:'🏴 АПЛ', home:'Челси', away:'Тоттенхэм', time:'21:30', live:false, odds:[2.10,3.50,3.30] },
+    { id:7, league:'🏴 АПЛ', home:'Ливерпуль', away:'Ньюкасл', time:'23:00', live:false, odds:[1.55,4.20,5.50] },
+    { id:8, league:'🇮🇹 Серия А', home:'Ювентус', away:'Интер', time:'21:45', live:false, odds:[2.80,3.10,2.60] },
   ],
   '🎾 Теннис': [
-    { id:5, league:'ATP', home:'Джокович', away:'Алькарас', time:'18:00', live:false, odds:[1.70,0,2.10] },
-    { id:6, league:'WTA', home:'Швёнтек', away:'Саболенко', time:'16:30', live:false, odds:[1.30,0,3.50] },
+    { id:20, league:'🎾 US Open. Женщины. 1/2', home:'Соболенко', away:'Пегула', time:'02:00', live:false, odds:[1.50,0,2.55] },
+    { id:21, league:'🎾 US Open. Женщины. 1/2', home:'Гауфф', away:'Рыбакина', time:'03:30', live:false, odds:[1.95,0,1.85] },
+    { id:22, league:'🎾 ATP. Челленджер', home:'Лагутин', away:'Алькала-Гурри', time:'2 сет', live:true, score:'1:1', odds:[1.80,0,1.95] },
+    { id:23, league:'🎾 WTA 125. Монтре', home:'Тревизан', away:'Маристани', time:'1 сет', live:true, score:'0:1', odds:[2.35,0,1.52] },
+    { id:24, league:'🎾 US Open. Муж. Пары', home:'Кравиц/Пиоц', away:'Рам/Солсбери', time:'23:00', live:false, odds:[1.65,0,2.18] },
   ],
   '🏒 Хоккей': [
-    { id:7, league:'НХЛ', home:'Рейнджерс', away:'Бостон', time:'02:00', live:false, odds:[2.40,4.00,2.30] },
-    { id:8, league:'КХЛ', home:'СКА', away:'ЦСКА', time:'19:30', live:false, odds:[2.10,4.10,2.90] },
+    { id:30, league:'🏒 КХЛ', home:'Локомотив', away:'Северсталь', time:"43'", live:true, score:'0:1', odds:[5.70,2.85,1.90] },
+    { id:31, league:'🏒 КХЛ', home:'Динамо Минск', away:'Шанхай Дрэгонс', time:"37'", live:true, score:'1:2', odds:[1.95,2.85,5.10] },
+    { id:32, league:'🏒 КХЛ', home:'Спартак', away:'СКА', time:"34'", live:true, score:'0:1', odds:[4.30,3.75,1.80] },
+    { id:33, league:'🏒 КХЛ', home:'ЦСКА', away:'Динамо Москва', time:'19:30', live:false, odds:[2.10,4.10,2.90] },
+    { id:34, league:'🏒 МХЛ', home:'МХК Динамо', away:'Амурские Тигры', time:"57'", live:true, score:'2:3', odds:[1.13,5.80,46.00] },
   ],
   '🏀 Баскетбол': [
-    { id:9, league:'НБА', home:'Лейкерс', away:'Голден Стэйт', time:'05:30', live:false, odds:[1.85,0,1.95] },
+    { id:40, league:'🏀 НБА', home:'Лейкерс', away:'Голден Стэйт', time:'05:30', live:false, odds:[1.85,0,1.95] },
+    { id:41, league:'🏀 НБА', home:'Бостон', away:'Майами', time:'03:00', live:false, odds:[1.45,0,2.75] },
   ],
   '🎮 Киберспорт': [
-    { id:10, league:'CS2', home:'NAVI', away:'FaZe', time:'19:00', live:false, odds:[1.75,0,2.05] },
-    { id:11, league:'Dota 2', home:'Team Spirit', away:'Gaimin', time:'21:00', live:false, odds:[1.60,0,2.30] },
+    { id:50, league:'🎮 CS2. BLAST', home:'NAVI', away:'FaZe', time:'19:00', live:false, odds:[1.75,0,2.05] },
+    { id:51, league:'🎮 Dota 2. ESL', home:'Team Spirit', away:'Gaimin', time:'21:00', live:false, odds:[1.60,0,2.30] },
   ],
 };
+
+function getTodayKey(){
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+
+function getTodayDeposit(){
+  if(!currentUser || !DB[currentUser]) return 0;
+  const today = getTodayKey();
+  if(!DB[currentUser].depositDate || DB[currentUser].depositDate !== today){
+    DB[currentUser].depositDate = today;
+    DB[currentUser].depositToday = 0;
+    saveDB();
+  }
+  return DB[currentUser].depositToday || 0;
+}
 
 function switchAuth(mode){
   authMode = mode;
@@ -263,6 +293,8 @@ function submitAuth(){
       pass: pass,
       balance: 10000,
       history: [],
+      depositToday: 0,
+      depositDate: getTodayKey(),
       createdAt: Date.now()
     };
     saveDB();
@@ -308,15 +340,37 @@ function updateBalanceUI(){
 }
 
 function showDeposit(){
-  const amount = prompt('Сумма пополнения (демо):', '1000');
+  const today = getTodayDeposit();
+  const left = DAILY_LIMIT - today;
+
+  if(left <= 0){
+    return showToast('❌ Лимит на сегодня исчерпан (1 500 000 ₽)', false);
+  }
+
+  const amount = prompt(
+    'Сумма пополнения\n\n' +
+    'Сегодня пополнено: ' + today.toLocaleString('ru-RU') + ' ₽\n' +
+    'Осталось на сегодня: ' + left.toLocaleString('ru-RU') + ' ₽\n\n' +
+    'Введите сумму:',
+    String(Math.min(1000, left))
+  );
   if(!amount) return;
   const num = Number(amount);
+
   if(isNaN(num) || num <= 0) return showToast('Неверная сумма', false);
+  if(num > left){
+    return showToast('❌ Превышение! Максимум сегодня: ' + left.toLocaleString('ru-RU') + ' ₽', false);
+  }
+
   balance += num;
   DB[currentUser].balance = balance;
+  DB[currentUser].depositToday = today + num;
+  DB[currentUser].depositDate = getTodayKey();
   saveDB();
   updateBalanceUI();
-  showToast('✅ Баланс пополнен на ' + num + ' ₽');
+
+  const leftAfter = DAILY_LIMIT - DB[currentUser].depositToday;
+  showToast('✅ +' + num.toLocaleString('ru-RU') + ' ₽ | Остаток: ' + leftAfter.toLocaleString('ru-RU') + ' ₽');
 }
 
 function showPage(page){
@@ -335,6 +389,12 @@ function renderProfile(){
   document.getElementById('pWins').textContent = wins;
   const inPlay = betHistory.filter(b => b.status === 'pending').reduce((a,b) => a + b.stake, 0);
   document.getElementById('pInPlay').textContent = inPlay.toLocaleString('ru-RU') + ' ₽';
+
+  const today = getTodayDeposit();
+  const left = DAILY_LIMIT - today;
+  const limitEl = document.getElementById('pLimit');
+  limitEl.textContent = left.toLocaleString('ru-RU') + ' ₽';
+  limitEl.style.color = left <= 0 ? '#da3633' : (left < 500000 ? '#ffcc00' : '#238636');
 
   const hist = document.getElementById('history');
   if(!betHistory.length){
@@ -500,6 +560,7 @@ function placeBet(){
   toggleSlip();
 }
 
+// Обновление коэффициентов каждые 5 секунд
 setInterval(() => {
   if(!currentUser) return;
   Object.keys(MATCHES).forEach(sport => {
@@ -509,7 +570,7 @@ setInterval(() => {
         const delta = (Math.random() - 0.5) * 0.15;
         let newOdd = o + delta;
         if(newOdd < 1.05) newOdd = 1.05;
-        if(newOdd > 15) newOdd = 15;
+        if(newOdd > 50) newOdd = 50;
         return Math.round(newOdd * 100) / 100;
       });
     });
@@ -523,6 +584,48 @@ setInterval(() => {
   });
   renderSlip();
 }, 5000);
+
+// LIVE-СИМУЛЯЦИЯ каждые 8 секунд
+setInterval(() => {
+  if(!currentUser) return;
+  let changed = false;
+
+  Object.keys(MATCHES).forEach(sport => {
+    MATCHES[sport].forEach(m => {
+      if(!m.live) return;
+
+      if(sport === '⚽ Футбол'){
+        const min = parseInt(m.time) || 0;
+        if(min < 90){
+          m.time = (min + 1) + "'";
+          changed = true;
+        }
+      } else if(sport === '🏒 Хоккей'){
+        const min = parseInt(m.time) || 0;
+        if(min < 60){
+          m.time = (min + 1) + "'";
+          changed = true;
+        }
+      }
+
+      if(Math.random() < 0.05 && m.score){
+        const parts = m.score.split(':').map(Number);
+        if(sport === '🎾 Теннис'){
+          if(Math.random() < 0.5) parts[0]++;
+          else parts[1]++;
+        } else {
+          if(Math.random() < 0.5) parts[0]++;
+          else parts[1]++;
+        }
+        m.score = parts.join(':');
+        changed = true;
+        showToast('⚽ ГОЛ! ' + m.home + ' ' + m.score + ' ' + m.away, true);
+      }
+    });
+  });
+
+  if(changed) renderMatches();
+}, 8000);
 
 let toastTimer;
 function showToast(text, ok = true){
