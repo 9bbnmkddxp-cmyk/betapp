@@ -278,34 +278,49 @@ function saveCurrent(){try{if(currentUser)localStorage.setItem('betapp_current',
 function seededRandom(seed){const x=Math.sin(seed*12.9898)*43758.5453;return x-Math.floor(x);}
 
 const LEAGUES={
-'🏆 Лига Чемпионов':[['Реал',10],['Ман Сити',10],['Бавария',10],['ПСЖ',9],['Ливерпуль',9],['Барселона',9],['Интер',9],['Арсенал',9],['Атлетико',8],['Боруссия Д',8],['Ювентус',8],['Милан',8],['Бенфика',7],['Порту',7],['Спортинг',7],['Аякс',7],['ПСВ',7],['Фейеноорд',6],['Астон Вилла',7],['Штутгарт',7],['Лейпциг',7],['Монако',7]],
+'🏆 Лига Чемпионов':[['Реал',10],['Ман Сити',10],['Бавария',10],['ПСЖ',10],['Ливерпуль',9],['Барселона',9],['Интер',9],['Арсенал',9],['Атлетико',8],['Боруссия Д',8],['Ювентус',8],['Милан',8],['Бенфика',7],['Порту',7],['Спортинг',7],['Аякс',7],['ПСВ',7],['Фейеноорд',6],['Астон Вилла',7],['Штутгарт',7],['Лейпциг',7],['Монако',7]],
 '🇪🇺 Лига Европы':[['Рома',7],['Байер',8],['Аталанта',7],['Марсель',7],['Вест Хэм',6],['Бенфика',7],['Порту',7],['Аякс',7],['Севилья',7],['Вильярреал',6],['Бетис',6],['Лацио',7]],
 '🇪🇸 Ла Лига':[['Реал',10],['Барселона',9],['Атлетико',8],['Атлетик',7],['Реал Сосьедад',7],['Вильярреал',6],['Севилья',6],['Бетис',6],['Валенсия',5],['Жирона',6],['Осасуна',5],['Сельта',4],['Мальорка',4],['Райо Вальекано',4],['Хетафе',4],['Алавес',4],['Лас-Пальмас',4],['Эспаньол',4],['Леганес',3],['Вальядолид',3]],
 '🇮🇹 Серия А':[['Интер',9],['Милан',8],['Ювентус',8],['Наполи',8],['Рома',7],['Лацио',7],['Аталанта',7],['Фиорентина',6],['Болонья',6],['Торино',5],['Удинезе',5],['Дженоа',4],['Кальяри',4],['Верона',4],['Эмполи',4],['Лечче',4],['Монца',3],['Парма',4],['Комо',3],['Венеция',3]],
 '🇩🇪 Бундеслига':[['Бавария',10],['Байер',9],['Боруссия Д',8],['Лейпциг',8],['Штутгарт',7],['Франкфурт',6],['Вольфсбург',5],['Фрайбург',6],['Боруссия М',5],['Вердер',5],['Хоффенхайм',5],['Майнц',4],['Аугсбург',4],['Унион Берлин',4],['Бохум',3],['Хайденхайм',3],['Санкт-Паули',3],['Хольштайн',3]],
 '🇫🇷 Лига 1':[['ПСЖ',10],['Монако',8],['Марсель',7],['Лион',6],['Лилль',7],['Ницца',6],['Ренн',6],['Ланс',6],['Тулуза',5],['Брест',5],['Реймс',4],['Страсбург',5],['Нант',4],['Монпелье',4],['Гавр',3],['Анже',3],['Сент-Этьен',3],['Осер',3]],
 '🏴 АПЛ':[['Ман Сити',10],['Арсенал',9],['Ливерпуль',9],['Челси',8],['МЮ',7],['Тоттенхэм',8],['Ньюкасл',7],['Астон Вилла',7],['Брайтон',6],['Вест Хэм',6],['Брентфорд',5],['Кристал Пэлас',5],['Фулхэм',5],['Эвертон',5],['Ноттингем',5],['Вулверхэмптон',5],['Борнмут',4],['Лестер',4],['Ипсвич',3],['Саутгемптон',3]],
-'🇷🇺 РПЛ':[['Зенит',7],['Краснодар',7],['Спартак',6],['ЦСКА',6],['Динамо М',6],['Локомотив',6],['Ростов',5],['Рубин',5],['Крылья Советов',4],['Балтика',4],['Ахмат',4],['Оренбург',4],['Сочи',4],['Пари НН',3],['Факел',3],['Динамо Мх',3]]
+'🇷🇺 РПЛ':[['Зенит',8],['Краснодар',8],['Спартак',7],['ЦСКА',7],['Динамо М',7],['Локомотив',7],['Ростов',6],['Рубин',6],['Крылья Советов',5],['Балтика',5],['Ахмат',5],['Оренбург',5],['Сочи',5],['Пари НН',4],['Факел',4],['Динамо Мх',4]]
 };
 
+// ============ КЭФЫ ИЗ РЕЙТИНГА ============
+// ПСЖ (10) vs Аякс (7) → П1 ~1.55, X ~4.20, П2 ~5.80
+// Реал (10) vs Хетафе (4) → П1 ~1.15, X ~5.50, П2 ~15.0
 function ratingToOdds(rHome,rAway){
-  const rH=rHome+0.5;
-  const diff=rH-rAway;
-  let pHome=1/(1+Math.exp(-diff*0.55));
-  pHome=pHome*0.65+0.10;
-  let pAway=1-pHome;
-  let pDraw=0.26+Math.max(0,0.08-Math.abs(diff)*0.015);
-  const sum=pHome+pAway;
-  pHome=pHome/sum*(1-pDraw);
-  pAway=pAway/sum*(1-pDraw);
-  const margin=1.05;
-  let o1=1/(pHome*margin);
-  let oX=1/(pDraw*margin);
-  let o2=1/(pAway*margin);
-  o1=Math.max(1.05,Math.min(20,o1));
-  oX=Math.max(3.20,Math.min(6.50,oX));
-  o2=Math.max(1.05,Math.min(25,o2));
-  return[Math.round(o1*100)/100,Math.round(oX*100)/100,Math.round(o2*100)/100];
+  // Домашнее преимущество +1
+  const diff = (rHome + 1.0) - rAway;
+  
+  // Вероятность победы хозяев — логистическая
+  let pHome = 1 / (1 + Math.exp(-diff * 0.45));
+  
+  // Ничья — база 26%
+  let pDraw = 0.26 + Math.max(0, (1 - Math.abs(diff)/8) * 0.08);
+  pDraw = Math.max(0.19, Math.min(0.34, pDraw));
+  
+  // Победа гостей — остаток
+  let pAway = 1 - pHome - pDraw;
+  
+  // Корректировка
+  if(pAway < 0.03){ pAway = 0.03; pHome = 1 - pDraw - pAway; }
+  if(pHome < 0.03){ pHome = 0.03; pAway = 1 - pDraw - pHome; }
+  
+  // Кэфы с маржой 5%
+  const margin = 1.05;
+  let o1 = 1 / (pHome * margin);
+  let oX = 1 / (pDraw * margin);
+  let o2 = 1 / (pAway * margin);
+  
+  // Границы
+  o1 = Math.max(1.05, Math.min(20, o1));
+  oX = Math.max(3.20, Math.min(5.80, oX));
+  o2 = Math.max(1.05, Math.min(25, o2));
+  
+  return [Math.round(o1*100)/100, Math.round(oX*100)/100, Math.round(o2*100)/100];
 }
 
 function generateMatches(epoch){
@@ -424,6 +439,7 @@ function getMatchOdds(match,state){
   const timeLeft=Math.max(1,90-min);
   const progress=Math.min(min/90,1);
   const expectedGoals=timeLeft*(2.7/90);
+  
   function probAtLeast(n,lambda){
     if(n<=0)return 1;
     let cumul=0,p=Math.exp(-lambda);
@@ -431,40 +447,55 @@ function getMatchOdds(match,state){
     for(let k=1;k<n;k++){p=p*lambda/k;cumul+=p;}
     return 1-cumul;
   }
+  
   const results=[0,0,0];
+  
   if(diff===0){
-    const pH=probAtLeast(1,expectedGoals)*0.5;
-    const pA=probAtLeast(1,expectedGoals)*0.5;
-    results[0]=pH;results[1]=1-pH-pA;results[2]=pA;
+    const totalProb = probAtLeast(1,expectedGoals);
+    const homeStrength = match.homeRating + 1;
+    const awayStrength = match.awayRating;
+    const pHomeNext = totalProb * (homeStrength / (homeStrength + awayStrength));
+    const pAwayNext = totalProb * (awayStrength / (homeStrength + awayStrength));
+    results[0] = pHomeNext;
+    results[1] = Math.max(0.10, 1 - pHomeNext - pAwayNext);
+    results[2] = pAwayNext;
   } else if(diff>0){
-    const pAE=probAtLeast(diff,expectedGoals);
-    const pAW=probAtLeast(diff+1,expectedGoals);
-    results[0]=1-pAE;results[1]=pAE-pAW;results[2]=pAW;
+    const pAwayEqual = probAtLeast(diff, expectedGoals);
+    const pAwayWin = probAtLeast(diff+1, expectedGoals);
+    results[0] = 1 - pAwayEqual;
+    results[1] = Math.max(0.02, pAwayEqual - pAwayWin);
+    results[2] = pAwayWin;
   } else {
-    const pHE=probAtLeast(-diff,expectedGoals);
-    const pHW=probAtLeast(-diff+1,expectedGoals);
-    results[0]=pHW;results[1]=pHE-pHW;results[2]=1-pHE;
+    const pHomeEqual = probAtLeast(-diff, expectedGoals);
+    const pHomeWin = probAtLeast(-diff+1, expectedGoals);
+    results[0] = pHomeWin;
+    results[1] = Math.max(0.02, pHomeEqual - pHomeWin);
+    results[2] = 1 - pHomeEqual;
   }
+  
   const bp0=1/base[0],bp1=1/base[1],bp2=1/base[2];
   const bsum=bp0+bp1+bp2;
   const mix=Math.min(1,progress*1.2+0.3);
   let p0=results[0]*(1-mix*0.3)+(bp0/bsum)*(mix*0.3);
   let p1=results[1]*(1-mix*0.5)+(bp1/bsum)*(mix*0.5);
   let p2=results[2]*(1-mix*0.3)+(bp2/bsum)*(mix*0.3);
-  const sum=p0+p1+p2;p0/=sum;p1/=sum;p2/=sum;
+  
+  const sum=p0+p1+p2;
+  p0/=sum;p1/=sum;p2/=sum;
   const probs=[p0,p1,p2];
   probs.forEach((p,i)=>{probs[i]=Math.max(0.02,Math.min(0.95,p));});
+  
   return base.map((o,i)=>{
     if(o===0)return 0;
     let odd=Math.round((1/probs[i])*100)/100;
-    if(odd<1.01)odd=1.01;
-    if(odd>99)odd=99;
     if(i===1){
       if(odd<1.05)odd=1.05;
       if(odd>25)odd=25;
+      if(diff===0&&progress>0.85&&progress<0.95)odd=Math.max(1.10,Math.min(1.40,odd));
+      if(diff===0&&progress>=0.95)odd=Math.max(1.05,Math.min(1.15,odd));
     }
-    if(i===1&&diff===0&&progress>0.85&&progress<0.95)odd=Math.max(1.10,Math.min(1.40,odd));
-    if(i===1&&diff===0&&progress>=0.95)odd=Math.max(1.05,Math.min(1.15,odd));
+    if(i!==1&&odd>30)odd=30;
+    if(odd<1.01)odd=1.01;
     return odd;
   });
 }
